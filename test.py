@@ -100,7 +100,7 @@ class Tavern:
             for card_number in range(self.minions_per_reroll):
                 self.tavern_board.append(self.game.card_draw())
 
-#Things to add: second player tavern, buffs, fights, turns, players hp
+#Things to add: drawing cards from the pool the same level or lower than your tavern, second player tavern, buffs, fights, turns, players hp
 
 game = Game()
 taverna = Tavern(game)

@@ -103,30 +103,30 @@ class Tavern:
 class Fight:
 
     def __init__(self, first_player, second_player):
-        self.first_player_board = []
-        self.second_player_board = []
-    
+        self.first_player_board = list(first_player.player_board) #Надо ли делать копию? Yes
+        self.second_player_board = list(second_player.player_board)
 
+    pass
+
+#experimental vibes
+a = [1,2,3, 4, 5, 6, 7]
+b = [1,2,3, 4, 5]
+#while len(a) * len(b)>0:
+
+c = len(a)
+print(c)
+a.pop()
+print(c)
+print(len(a))
+"""
+a = [1,2,3, 4, 5, 6, 7]
+b = list(a)
+print(a)
+while len(a) * len(b)>0:
+    for x in a:
+        print(x)
+        a.pop(random.randint(0, len(a) - 1))    
+        print(a)
+"""
 
 #Things to add: second player tavern check - done, fights, turns, players hp, buffs, drawing cards from the pool the same level or lower than your tavern
-
-game = Game()
-taverna = Tavern(game)
-print(taverna.tavern_board)
-print(taverna.tavern_info())
-taverna.buy(2)
-print(taverna.tavern_info())
-print(taverna.player_hand[0].card_info())
-taverna.play_card(0)
-print(taverna.player_board[0].card_info())
-print(f'Number of minions in pool before sell: {len(game.cards_pool)}')
-taverna.sell(0)
-print(taverna.player_board)
-print(f'Number of minions in pool after sell: {len(game.cards_pool)}')
-taverna.reroll()
-print(f'Number of minions in pool after reroll: {len(game.cards_pool)}')
-print(taverna.tavern_info())
-print('second player')
-taverna2 = Tavern(game)
-print(taverna2.tavern_info())
-print(f'Number of minions in pool after second player started: {len(game.cards_pool)}')

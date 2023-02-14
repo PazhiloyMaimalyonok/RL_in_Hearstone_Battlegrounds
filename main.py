@@ -109,15 +109,44 @@ class Fight:
     pass
 
 #experimental vibes
-a = [1,2,3, 4, 5, 6, 7]
-b = [1,2,3, 4, 5]
+board_a = [1,2,3, 4, 5, 6, 7]
+board_b = [1,2,3]
+#Стэк для последовательности ходов и борд игрока отдельно. Работает с неизменяющимися, Работает с изменяющимися
+stack_a = list(board_a)
+stack_b = list(board_b)
+#while len(board_a) * len(board_b)>0:
+cnt = 0
+while cnt < 9:
+    if stack_a == []:
+        stack_a = list(board_a)
+    if stack_b == []:
+        stack_b = list(board_b)
+    print(f'A-stack: {stack_a}, B-stack: {stack_b}')
+    elem_a, elem_b = stack_a.pop(0), stack_b.pop(0)
+    print(f'A-elem: {elem_a}, B-elem: {elem_b}')
+    excluded = board_a.pop(random.randint(0, len(board_a) - 1)) 
+    print(f'Выкинули: {excluded}')
+    #Добавляю конструкцию с трай, так как выкинутый элемент из board_a мог уже сходить и не находиться в stack_a
+    try: 
+        stack_a.remove(excluded)
+    except:
+        pass
+    cnt += 1
+    
+"""
+#Остаток от деления. Работает с неизменяющимися, не работает с изменяющимися
+cnt = 0
 #while len(a) * len(b)>0:
+while cnt < 9:
+    print(f'Counter: {cnt}')
+    print(f'A-array: {a}')
+    print(f'A-element: {a[cnt % len(a)]}, B-element: {b[cnt % len(b)]}')
+    print(f'Остаток от деления для а: {cnt % len(a)}, Остаток от деления для В: {cnt % len(b)}')
+    excluded = a.pop(random.randint(0, len(a) - 1)) 
+    print(f'Выкинули: {excluded}')
+    cnt += 1
+"""
 
-c = len(a)
-print(c)
-a.pop()
-print(c)
-print(len(a))
 """
 a = [1,2,3, 4, 5, 6, 7]
 b = list(a)

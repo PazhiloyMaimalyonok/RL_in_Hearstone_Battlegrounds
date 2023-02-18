@@ -1,3 +1,17 @@
+"""
+from main import Game, Tavern
+game = Game()
+taverna = Tavern(game)
+taverna.buy(0)
+taverna.play_card(0)
+print(taverna.player_board)
+abob = list(taverna.player_board)
+taverna.player_board[0].hp -= 1
+print(taverna.player_board[0].card_info())
+print(abob[0].card_info())
+"""
+
+"""
 #Player tavern check
 from main import Game, Tavern
 
@@ -21,4 +35,4 @@ print('second player')
 taverna2 = Tavern(game)
 print(taverna2.tavern_info())
 print(f'Number of minions in pool after second player started: {len(game.cards_pool)}')
-
+"""

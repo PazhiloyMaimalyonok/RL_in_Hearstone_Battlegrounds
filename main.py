@@ -1,4 +1,5 @@
 import random
+import copy
 
 class Card:
 
@@ -103,16 +104,19 @@ class Tavern:
 class Fight:
 
     def __init__(self, first_player, second_player):
-        self.first_player_board = list(first_player.player_board) #Надо ли делать копию? Yes
-        self.second_player_board = list(second_player.player_board)
+        #self.first_player_board = list(first_player.player_board) #Надо ли делать копию? Yes
+        #self.second_player_board = list(second_player.player_board)
+        self.first_player_board = [copy.deepcopy(minion) for minion in first_player.player_board]
+        self.second_player_board = [copy.deepcopy(minion) for minion in second_player.player_board]
 
-    def attack_sequence_v1(self): #зарандомить начало
+    def simulate(self): #зарандомить начало
         #Стэк для последовательности ходов и борд игрока отдельно. Работает, когда количество существ на столе не увеличивается. Работает ли, когда количество существ увеличивается?
         #Добавить случайный выбор первого хода, чтобы не всегда ходил игрок а
 
         #Последовательность аттак реализуется через стэки
         first_player_stack = list(self.first_player_board)
         second_player_stack = list(self.second_player_board)
+
         counter = 0 #Счетчик ходов, который определяет, какой из игроков атакует
 
         while len(self.first_player_board) * len(self.second_player_board) > 0: #прекращаем битву, когда у одного из игроков умрут все существа. Добавить ограничение на кол-во ударов
@@ -129,7 +133,7 @@ class Fight:
                 defending_minion = self.second_player_board[random.randint(0, len(self.second_player_board) - 1)]
                 print(f'У второго игрока защищается карта: {defending_minion.card_info()}, ее позиция на столе: {self.second_player_board.index(defending_minion)}')
 
-                #Если какое-либо существо погибло, то выкидываем его со стола и убираем из стака
+                #Если какое-либо существо погибло, то выкидываем его со стола и из стека
                 attacking_minion.hp -= defending_minion.attack
                 defending_minion.hp -= attacking_minion.attack
                 if attacking_minion.hp <= 0:
@@ -147,18 +151,6 @@ class Fight:
                 print(f'Статы атакующей карты после атаки: {attacking_minion.card_info()}, Статы защищающейся карты после атаки: {defending_minion.card_info()}')
                 print(f'Стол атакующего игрока после атаки: {[minion.card_info() for minion in self.first_player_board]}\
                     , Стол защищающегося игрока после атаки: {[minion.card_info() for minion in self.second_player_board]}')
-            #Добавляю конструкцию с трай, так как выкинутый элемент из self.first_player_board мог уже сходить и умереть. 
-            #Поэтому он не должен  находиться в first_player_stack
-                """
-                try: 
-                    first_player_stack.remove(attacking_minion_excluded)
-                except:
-                    pass
-                try:
-                    second_player_stack.remove(defending_minion_excluded)
-                except:
-                    pass
-                """
 
             else:
                 print('---------------------------------------Ход второго игрока---------------------------------------')
@@ -173,7 +165,7 @@ class Fight:
                 defending_minion = self.first_player_board[random.randint(0, len(self.first_player_board) - 1)]
                 print(f'У первого игрока защищается карта: {defending_minion.card_info()}, ее позиция на столе: {self.first_player_board.index(defending_minion)}')
 
-                #Если какое-либо существо погибло, то выкидываем его со стола
+                #Если какое-либо существо погибло, то выкидываем его со стола и из стека
                 attacking_minion.hp -= defending_minion.attack
                 defending_minion.hp -= attacking_minion.attack
                 if attacking_minion.hp <= 0:
@@ -191,18 +183,6 @@ class Fight:
                 print(f'Статы атакующей карты после атаки: {attacking_minion.card_info()}, Статы защищающейся карты после атаки: {defending_minion.card_info()}')
                 print(f'Стол атакующего игрока после атаки: {[minion.card_info() for minion in self.second_player_board]}\
                     , Стол защищающегося игрока после атаки: {[minion.card_info() for minion in self.first_player_board]}')
-            #Добавляю конструкцию с трай, так как выкинутый элемент из self.first_player_board мог уже сходить и умереть. 
-            #Поэтому он не должен  находиться в first_player_stack. Добавить для В в итоговой реализации
-            """
-                try: 
-                    second_player_stack.remove(attacking_minion_excluded)
-                except:
-                    pass
-                try:
-                    first_player_stack.remove(defending_minion_excluded)
-                except:
-                    pass
-            """
 
             counter += 1
         
@@ -222,7 +202,7 @@ class Fight:
 
     pass
 
-#Things to add: second player tavern check - done, fights, turns, players hp, buffs, drawing cards from the pool the same level or lower than your tavern
+#Things to add: second player tavern check - done, fights - done, turns, players hp, pygame visualization, drawing cards from the pool the same level or lower than your tavern, buffs
 
 
 #testing Fight(). Изменил количества стартового золота для теста
@@ -242,4 +222,6 @@ taverna_second_player.play_card(0)
 print([minion.card_info() for minion in taverna_second_player.player_board])
 
 fight = Fight(taverna_first_player, taverna_second_player)
-fight.attack_sequence_v1()
+fight.simulate()
+print([minion.card_info() for minion in taverna_first_player.player_board])
+print([minion.card_info() for minion in taverna_second_player.player_board])

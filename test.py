@@ -1,3 +1,33 @@
+from main import Game, Tavern
+
+a = [1 , 2, 3 , 4]
+b = [int(x>2) for x in a]
+print(b)
+print(sum(b))
+
+"""
+#testing Fight(). Изменил количества стартового золота для теста
+game = Game()
+taverna_first_player = Tavern(game)
+taverna_first_player.buy(0)
+taverna_first_player.buy(0)
+taverna_first_player.play_card(0)
+taverna_first_player.play_card(0)
+print([minion.card_info() for minion in taverna_first_player.player_board])
+
+taverna_second_player = Tavern(game)
+taverna_second_player.buy(0)
+taverna_second_player.buy(0)
+taverna_second_player.play_card(0)
+taverna_second_player.play_card(0)
+print([minion.card_info() for minion in taverna_second_player.player_board])
+
+fight = Fight(taverna_first_player, taverna_second_player)
+print(fight.simulate())
+print([minion.card_info() for minion in taverna_first_player.player_board])
+print([minion.card_info() for minion in taverna_second_player.player_board])
+"""
+
 """
 from main import Game, Tavern
 game = Game()

@@ -13,7 +13,7 @@ class Card:
             self.type = 'Minion'
             self.klass = 'Neutral'
             self.tavern_level = 1
-            self.card_amount = 3
+            self.card_amount = 17
         elif card_name == 'Tavern_Tipper':
             self.card_name = card_name
             self.attack = 2
@@ -21,7 +21,7 @@ class Card:
             self.type = 'Minion'
             self.klass = 'Neutral'
             self.tavern_level = 1
-            self.card_amount = 3
+            self.card_amount = 17
         else:
             print('No such card yet')
 
@@ -32,6 +32,7 @@ class Game:
 
     def __init__(self, players_number = 2):
         self.players_number = players_number
+        self.turn_number = 1
         #Adding required amount of cards to the pool
         self.cards_pool = []
         for card_name in Card.minions_list:
@@ -45,15 +46,55 @@ class Game:
     def card_return_to_pool(self, card):
         self.cards_pool.append(card)
 
+    def play_game(self):
+        game = Game()
+        print('Would u like to name players? 1 - Yes, 0 - No')
+        agreement = int(input())
+        if agreement == 1:
+            print('Enter players names like this "Player1 Player2"')
+            players_names = [player_name for player_name in input().split()]
+            players_taverns = []
+            for i in range(self.players_number):
+                players_taverns.append(Tavern(game, player_name = players_names[i]))
+        else:
+            players_taverns = []
+            for i in range(self.players_number):
+                players_taverns.append(Tavern(game, player_name = 'Player' + str(i + 1)))
+        while len(players_taverns) > 1:
+            for player in players_taverns:
+                player.player_turn()
+            fighting_spisok = list(players_taverns)
+            while len(fighting_spisok) > 1:
+                fighter1, fighter2 = random.sample(fighting_spisok, 2)
+                fighting_spisok.remove(fighter1)
+                fighting_spisok.remove(fighter2)
+                player_won, damage_dealt = Fight(fighter1, fighter2).simulate()
+                if player_won == -1:
+                    pass
+                elif player_won == 0:
+                    fighter2.player_hp -= damage_dealt
+                elif player_won == 1:
+                    fighter1.player_hp -= damage_dealt
+                else:
+                    print('error')
+            for player in players_taverns:
+                if player.player_hp <= 0:
+                    players_taverns.remove(player)
+
+        print(f'Player {players_taverns[0].player_name} won')
+
 class Tavern:
 
-    def __init__(self, game): #Переменная game одна для таверн разных игроков. Реализовать внутри класса Game
-        self.gold = 9 #!!!!!!!!!!!!!!!!!!!!!! вернуть 3, как и было
+    def __init__(self, game, player_name = 'user'): #Переменная game одна для таверн разных игроков. Реализовать внутри класса Game
+        self.player_name = player_name
+        self.gold = 3
         self.level = 1
         self.minions_per_reroll = 3
         self.player_hand = []
         self.player_board = []
         self.tavern_board = []
+        self.turn_number = 1
+        self.player_hp = 5
         self.game = game
         #Starting board minions
         for card_number in range(self.minions_per_reroll):
@@ -61,6 +102,12 @@ class Tavern:
     
     def tavern_info(self):
         return f'Tavern board: {[card.card_info() for card in self.tavern_board]}'
+    
+    def player_hand_info(self):
+        return f'Player hand: {[card.card_info() for card in self.player_hand]}'
+    
+    def player_board_info(self):
+        return f'Player board: {[card.card_info() for card in self.player_board]}'
 
     def buy(self, position):
         #checking hand size
@@ -76,12 +123,12 @@ class Tavern:
             return self.player_hand.append(self.tavern_board.pop(position))
     
     def play_card(self, position):
-        if self.player_hand[position].type != 'Minion':
+        if position > len(self.player_hand) - 1:
+            print('Card index out of player_hand range')
+        elif self.player_hand[position].type != 'Minion':
             print('Can only handle Minion type cards now')
         elif len(self.player_board) >= 7:
             print('Player board is full. Cannot buy any more cards')
-        elif position > len(self.player_hand) - 1:
-            print('Card index out of player_hand range')
         else:
             return self.player_board.append(self.player_hand.pop(position))
 
@@ -92,8 +139,8 @@ class Tavern:
             self.gold += 1 #Change for 3-3 and 2-3 pirates
             self.game.card_return_to_pool(self.player_board.pop(position)) #проверить, что это работает для таверн разных игроков
 
-    def reroll(self):
-        if self.gold < 1:
+    def reroll(self, reroll_type = 'usual'):
+        if self.gold < 1 and reroll_type == 'usual':
             print('Not enough gold')
         else:
             for card_number in range(len(self.tavern_board)):
@@ -101,11 +148,59 @@ class Tavern:
             for card_number in range(self.minions_per_reroll):
                 self.tavern_board.append(self.game.card_draw())
 
+    def player_turn(self):
+        self.reroll(reroll_type = 'start_of_the_turn_reroll')
+        self.gold = min(2 + 1 * self.turn_number, 10)
+        print(f'-------------------------Player {self.player_name} turn-------------------------')
+        print(self.tavern_info())
+        print(self.player_hand_info())
+        print(self.player_board_info())
+        print(f'players gold: {self.gold}, playerss hp: {self.player_hp}, players tavern level: {self.level}')
+        action_number = -99
+        while action_number != 6:
+            print(f'Print action number: 1 - buy a minion, 2 - play a card, 3 - sell a minion, 4 - reroll, 5 - show stats, 6 - end the turn')
+            action_number = int(input())
+            if action_number == 1:
+                print(self.tavern_info())
+                print(f'Choose minions position. Starting from 0. Can use negatives')
+                action_number = int(input())
+                self.buy(action_number)
+
+            elif action_number == 2:
+                print(self.player_hand_info())
+                print(f'Choose minions position. Starting from 0. Can use negatives')
+                action_number = int(input())
+                self.play_card(action_number)
+
+            elif action_number == 3:
+                print(self.player_board_info())
+                print(f'Choose minions position. Starting from 0. Can use negatives')
+                action_number = int(input())
+                self.sell(action_number)
+
+            elif action_number == 4:
+                self.reroll()
+                print(self.tavern_info())
+
+            elif action_number == 5:
+                print(self.tavern_info())
+                print(self.player_hand_info())
+                print(self.player_board_info())
+                print(f'players gold: {self.gold}, playerss hp: {self.player_hp}, players tavern level: {self.level}')
+
+            elif action_number == 6:
+                pass
+            else:
+                print('wrong number')
+        self.turn_number += 1
+
 class Fight:
 
     def __init__(self, first_player, second_player):
         #self.first_player_board = list(first_player.player_board) #Надо ли делать копию? Yes
         #self.second_player_board = list(second_player.player_board)
+        self.first_player = first_player
+        self.second_player = second_player
         self.first_player_board = [copy.deepcopy(minion) for minion in first_player.player_board]
         self.second_player_board = [copy.deepcopy(minion) for minion in second_player.player_board]
 
@@ -117,7 +212,7 @@ class Fight:
         first_player_stack = list(self.first_player_board)
         second_player_stack = list(self.second_player_board)
 
-        counter = 0 #Счетчик ходов, который определяет, какой из игроков атакует
+        counter = random.randint(0, 1) #Счетчик ходов, который определяет, какой из игроков атакует. Генерируется случайно, чтобы не всегда атаковал первый
 
         while len(self.first_player_board) * len(self.second_player_board) > 0: #прекращаем битву, когда у одного из игроков умрут все существа. Добавить ограничение на кол-во ударов
             if counter % 2 == 0: # разбиваем на ход первого игрока и второго
@@ -189,11 +284,20 @@ class Fight:
         print(f'Стол первого игрока после боя: {[minion.card_info() for minion in self.first_player_board]}')
         print(f'Стол второго игрока после боя: {[minion.card_info() for minion in self.second_player_board]}')
         if len(self.first_player_board) > 0 and len(self.second_player_board) <= 0:
-            print(f'Победил первый')
+            print(f'Победил {self.first_player.player_name}')
+            player_won = 0
+            damage_dealt = sum([minion.tavern_level for minion in self.first_player_board]) + self.first_player.level
+            return player_won, damage_dealt
         elif len(self.second_player_board) > 0 and len(self.first_player_board) <= 0:
-            print(f'Победил второй')
+            print(f'Победил {self.second_player.player_name}')
+            player_won = 1
+            damage_dealt = sum([minion.tavern_level for minion in self.second_player_board]) + self.second_player.level
+            return player_won, damage_dealt
         elif len(self.first_player_board) <= 0 and len(self.second_player_board) <= 0:
             print(f'Ничья')
+            player_won = -1
+            damage_dealt = 0
+            return player_won, damage_dealt
         else:
             print(f'Что-то странное. Количество ударов = {counter}')
 
@@ -202,26 +306,15 @@ class Fight:
 
     pass
 
-#Things to add: second player tavern check - done, fights - done, turns, players hp, pygame visualization, drawing cards from the pool the same level or lower than your tavern, buffs
+#Things to add: second player tavern check - done, fights - done, fights results, turns, players hp, pygame visualization, triplets, drawing cards from the pool the same level or lower than your tavern, buffs
 
+#Trying all game at once
+game = Game()
+game.play_game()
 
-#testing Fight(). Изменил количества стартового золота для теста
+"""
 game = Game()
 taverna_first_player = Tavern(game)
-taverna_first_player.buy(0)
-taverna_first_player.buy(0)
-taverna_first_player.play_card(0)
-taverna_first_player.play_card(0)
-print([minion.card_info() for minion in taverna_first_player.player_board])
-
-taverna_second_player = Tavern(game)
-taverna_second_player.buy(0)
-taverna_second_player.buy(0)
-taverna_second_player.play_card(0)
-taverna_second_player.play_card(0)
-print([minion.card_info() for minion in taverna_second_player.player_board])
-
-fight = Fight(taverna_first_player, taverna_second_player)
-fight.simulate()
-print([minion.card_info() for minion in taverna_first_player.player_board])
-print([minion.card_info() for minion in taverna_second_player.player_board])
+for i in range(10):
+    taverna_first_player.player_turn()
+"""

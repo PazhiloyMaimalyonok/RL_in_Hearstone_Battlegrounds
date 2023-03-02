@@ -21,5 +21,13 @@ class MinionCard:
     def card_info(self):
 
         return f'Card name: {self.card_name}, card attack: {self.attack}, card hp {self.hp}'
-   
-   
+
+class Deck:
+    
+    def __init__():
+        self.pool = self.make_deck
+       
+    def make_deck(self):
+        minions = csv.read('minions.txt')
+        for minion in minions:
+            card = Card(card_name=minion[0], attack=minion[1], ....)

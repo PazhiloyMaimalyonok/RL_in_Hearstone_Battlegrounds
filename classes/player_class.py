@@ -8,6 +8,7 @@ class Player:
         self.tavern_tier = tavern_tier
         self.board = board
         self.hand = hand
+        self.frozen_minions = []
 
     def __repr__(self):
         return (f'Class: {self.__class__.__name__}\n'

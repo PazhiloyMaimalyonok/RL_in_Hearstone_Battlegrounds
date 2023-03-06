@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from classes.card_class import MinionCard
 from classes.deck_class import Deck
 from classes.player_class import Player
@@ -17,12 +19,12 @@ class Tavern:
         # Fill the board at the start of each tavern turn
         self.board = self.fill_up_board()
 
-    def get_gold_for_this_turn(self):
-        gold = self.turn_number + 2
-        if gold > 10:
-            gold = 10
+    def board_information(self):
+        print("Tavern's board:")
+        pprint(self.board)
 
-        return gold
+    def get_gold_for_this_turn(self):
+        return min(self.turn_number + 2, 10)
 
     def get_minions_per_reroll_for_this_turn(self):
         minions_per_reroll_dictionary = {1: 3, 2: 4, 3: 4, 4: 5, 5: 5}
@@ -33,7 +35,7 @@ class Tavern:
 
     def fill_up_board(self):
         minions_list = self.player.frozen_minions
-        how_many_minions_to_add = self.minions_per_reroll - len(self.board)
+        how_many_minions_to_add = self.minions_per_reroll - len(self.player.frozen_minions)
         for i in range(how_many_minions_to_add):
             minions_list.append(self.deck.draw_card(players_tavern_tier=self.player.tavern_tier))
         return minions_list
@@ -84,54 +86,47 @@ class Tavern:
             self.clear_board()
             self.update_board()
 
-    def player_turn(self):
-        self.reroll(reroll_type='start_of_the_turn_reroll')
-        self.gold = min(2 + 1 * self.turn_number, 10)
-        print(f'-------------------------Player {self.player_name} turn-------------------------')
-        print(self.tavern_info())
-        print(self.player_hand_info())
-        print(self.player_board_info())
-        print(f'players gold: {self.gold}, playerss hp: {self.player_hp}, players tavern level: {self.level}')
-        action_number = -99
-        while action_number != 6:
-            print(f'Print action number: '
-                  f'1 - buy a minion, '
-                  f'2 - play a card, '
-                  f'3 - sell a minion, '
-                  f'4 - reroll, '
-                  f'5 - show stats, '
-                  f'6 - end the turn')
-            action_number = int(input())
-            if action_number == 1:
-                print(self.tavern_info())
-                print(f'Choose minions position. Starting from 0. Can use negatives')
-                action_number = int(input())
-                self.buy(action_number)
+    def player_turn(self, action):
+        if action == 'Buy minion':
+            self.board_information()
+            print(f'Choose minions position. Starting from 0. Can use negatives')
+            self.buy(position=int(input()))
 
-            elif action_number == 2:
-                print(self.player_hand_info())
-                print(f'Choose minions position. Starting from 0. Can use negatives')
-                action_number = int(input())
-                self.play_card(action_number)
+        elif action == 'Play card':
+            self.player.hand_information()
+            print(f'Choose minions position. Starting from 0. Can use negatives')
+            self.play_card(position=int(input()))
 
-            elif action_number == 3:
-                print(self.player_board_info())
-                print(f'Choose minions position. Starting from 0. Can use negatives')
-                action_number = int(input())
-                self.sell(action_number)
+        elif action == 'Sell minion':
+            self.player.board_information()
+            print(f'Choose minions position. Starting from 0. Can use negatives')
+            self.sell(position=int(input()))
 
-            elif action_number == 4:
-                self.reroll()
-                print(self.tavern_info())
+        elif action == 'Reroll':
+            self.reroll()
+            self.board_information()
 
-            elif action_number == 5:
-                print(self.tavern_info())
-                print(self.player_hand_info())
-                print(self.player_board_info())
-                print(f'players gold: {self.gold}, playerss hp: {self.player_hp}, players tavern level: {self.level}')
+        elif action == 'Stats':
+            self.board_information()
+            self.player.hand_information()
+            self.player.board_information()
+            print(f"Player's gold: {self.gold}, player's hp: {self.player.health}, "
+                  f"player's tavern tier: {self.player.tavern_tier})")
 
-            elif action_number == 6:
-                pass
-            else:
-                print('wrong number')
-        self.turn_number += 1
+# elif action == 6:
+#     pass
+# else:
+#     print('wrong number')
+# self.turn_number += 1
+# print(f'Print action number: '
+#       f'1 - buy a minion, '
+#       f'2 - play a card, '
+#       f'3 - sell a minion, '
+#       f'4 - reroll, '
+#       f'5 - show stats, '
+#       f'6 - end the turn')
+# print(f'-------------------------Player {self.player} turn-------------------------')
+# print(self.tavern_info())
+# print(self.player_hand_info())
+# print(self.player_board_info())
+# print(f'players gold: {self.gold}, playerss hp: {self.player_hp}, players tavern level: {self.level}')

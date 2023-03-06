@@ -1,4 +1,5 @@
 import uuid
+from pprint import pprint
 
 
 class Player:
@@ -11,5 +12,13 @@ class Player:
         self.frozen_minions = []
 
     def __repr__(self):
-        return (f'Class: {self.__class__.__name__}\n'
-                f'Name: {self.name}, health: {self.health}, tavern_tier {self.tavern_tier}')
+        return f'Class: {self.__class__.__name__}, name: {self.name}, health: {self.health}, ' \
+               f'tavern_tier: {self.tavern_tier}'
+
+    def hand_information(self):
+        print("Player's hand:")
+        pprint(self.hand)
+
+    def board_information(self):
+        print("Player's board:")
+        pprint(self.board)

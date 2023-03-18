@@ -18,9 +18,10 @@ class Deck:
         with open(file=minions_information_file_path, newline='') as csv_file:
             minions = csv.reader(csv_file, delimiter=',')
             for minion in minions:
-                for i in range(int(minion[5])):
+                for i in range(int(minion[6])):
                     self.cards_pool.append(MinionCard(name=minion[0], attack=int(minion[1]), health=int(minion[2]),
-                                                      minion_type=minion[3], tavern_tier=int(minion[4])))
+                                                      minion_type=minion[3], tavern_tier=int(minion[4]),
+                                                      provoke=minion[5]))
 
     def cards_amount(self):
         return len(self.cards_pool)

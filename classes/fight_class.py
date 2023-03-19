@@ -47,7 +47,7 @@ class Fight:
     def punch_second_player(self):
         damage = self.first_player.tavern_tier + sum([minion.tavern_tier for minion in
                                                       self.first_player_fighting_board.fighting_board])
-        self.first_player.health -= damage
+        self.second_player.health -= damage
         print(f'{self.first_player.name} punches {self.second_player.name} for {damage} damage')
 
     def punch_someone(self):

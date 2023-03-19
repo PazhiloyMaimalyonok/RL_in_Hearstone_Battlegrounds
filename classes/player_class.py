@@ -3,12 +3,12 @@ from pprint import pprint
 
 
 class Player:
-    def __init__(self, name=str(uuid.uuid4()), health=40, tavern_tier=1, board=list(), hand=list()):
+    def __init__(self, name=str(uuid.uuid4()), health=40, tavern_tier=1):
         self.name = name
         self.health = health
         self.tavern_tier = tavern_tier
-        self.board = board
-        self.hand = hand
+        self.board = []
+        self.hand = []
         self.frozen_minions = []
 
     def __repr__(self):

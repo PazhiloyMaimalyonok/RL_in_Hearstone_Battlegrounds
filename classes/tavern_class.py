@@ -110,5 +110,5 @@ class Tavern:
             self.board_information()
             self.player.hand_information()
             self.player.board_information()
-            print(f"Player's gold: {self.gold}, player's hp: {self.player.health}, "
+            print(f"Player's name: {self.player.name}. Player's gold: {self.gold}, player's hp: {self.player.health}, "
                   f"player's tavern tier: {self.player.tavern_tier})")

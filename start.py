@@ -8,7 +8,7 @@ def start_game():
     players = []
     for i in range(1, players_number + 1):
         players.append(Player(name=f'Player {i}'))
-    deck = Deck(minions_information_file_path='minions_information.csv')
+    deck = Deck()
     game = Game(players=players, deck=deck)
     game.play_game()
 

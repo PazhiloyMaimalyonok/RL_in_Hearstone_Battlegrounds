@@ -16,9 +16,9 @@ class Player:
                f'tavern_tier: {self.tavern_tier}'
 
     def hand_information(self):
-        print("Player's hand:")
+        print(f"{self.name} hand:")
         pprint(self.hand)
 
     def board_information(self):
-        print("Player's board:")
+        print(f"{self.name} board:")
         pprint(self.board)

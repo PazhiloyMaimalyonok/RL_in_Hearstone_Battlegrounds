@@ -1,5 +1,5 @@
 import random
-from card import Card
+from card_module import Card
 
 class CardsPool:
     """Описание
@@ -23,5 +23,5 @@ class CardsPool:
     def card_return_to_pool(self, card: Card):
         self.cards_pool.append(card)
         
-a = CardsPool()
-a.card_draw()
+# a = CardsPool()
+# a.card_draw()

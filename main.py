@@ -1,3 +1,4 @@
+# В этом файле я запускаю игру
 import random
 import copy
 from cards_pool import CardsPool

@@ -32,6 +32,7 @@ class Card:
             self.tavern_level = 1
             self.card_amount = 17
         elif card_name == 'Backstage_Security':
+            # Доработать карту
             self.card_name = card_name
             self.attack = 4
             self.hp = 4

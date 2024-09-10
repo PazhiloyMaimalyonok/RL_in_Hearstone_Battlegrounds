@@ -59,7 +59,19 @@ class Tavern:
         elif len(self.player_board) >= 7:
             print('Player board is full. Cannot buy any more cards')
         else:
-            return self.player_board.append(self.player_hand.pop(position))
+            played_card = self.player_hand.pop(position)
+            self.player_board.append(played_card)
+            self.update_board(played_card)
+        
+    def rearrange_board(self):
+        # метод позволяет переставлять минионов местами
+        pass
+        
+    def update_board(self, played_card):
+        # Метод проходится по каждой карте и ее бафам и смотрит, как она забафается при выставлении текущей карты на стол
+        for minion in self.player_board:
+            minion.trigger_buffs(played_card)
+            
 
     def sell(self, position):
         if position > len(self.player_board) - 1:

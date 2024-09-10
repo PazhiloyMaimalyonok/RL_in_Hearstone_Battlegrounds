@@ -28,15 +28,13 @@ class Mechanics:
         raise NotImplementedError("Subclass must implement trigger method")
     
     def trigger_buffs(self):
-        # Вызываю бафы. То есть заставляю карты и таверну измениться исходя из бафов, которые я расчитал
+        # Вызываю бафы. Метод вызывается, чтобы просчитать бафы и забафать карту.
         # Вероятно это будет реализовано в этом(общем) классе
+        ## Рассчитываю баффы
+        self.calculate_buffs()
+        ## Реализую бафы
         self.card.buff_card(self.hp_buff, 'hp')
         self.card.buff_card(self.attack_buff, 'attack') # Могу ли я использовать сел.данные из подкласса
-        
-    def call_buffs(self):
-        # Вызываю бафы. Метод вызывается, чтобы просчитать бафы и забафать карту
-        self.calculate_buffs()
-        self.trigger_buffs()
     
 class PlayedCardBuffMechanic(Mechanics):
     """Описание
@@ -48,17 +46,12 @@ class PlayedCardBuffMechanic(Mechanics):
     Мысли по улучшению
         Нужно добавить тип баффа (для красненького отдельный, для мэрлока отдельный)
     """
-    def __init__(self, card, played_card, buff_name, tavern=None):
+    def __init__(self, card, played_card, tavern=None):
         super().__init__(card, played_card, tavern) 
-        self.buff_name = buff_name# like '1/4 wraith weaver buff'
+        # self.buff_name = buff_name# like '1/4 wraith weaver buff'
         
     def calculate_buffs(self):
-        if self.buff_name == '1/4 wraith weaver buff':
+        if self.card.card_name in ['Wrath_Weaver']:
             if self.played_card.klass == 'Demon':
                 self.attack_buff += 2
                 self.hp_buff += 1
-            
-from card_module import Card
-a = Card(card_name='Wrath_Weaver')
-print(a.card_info)            
-    

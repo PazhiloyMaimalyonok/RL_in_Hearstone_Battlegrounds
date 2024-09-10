@@ -1,3 +1,5 @@
+from mechanics_module import PlayedCardBuffMechanic
+
 class Card:
     """Описание
     Что сейчас класс собой представляет
@@ -23,6 +25,7 @@ class Card:
             self.klass = 'Neutral'
             self.tavern_level = 1
             self.card_amount = 17
+            self.mechanics_list = [PlayedCardBuffMechanic]
         elif card_name == 'Tavern_Tipper':
             self.card_name = card_name
             self.attack = 2
@@ -31,6 +34,7 @@ class Card:
             self.klass = 'Neutral'
             self.tavern_level = 1
             self.card_amount = 17
+            self.mechanics_list = []
         elif card_name == 'Backstage_Security':
             # Доработать карту
             self.card_name = card_name
@@ -40,6 +44,7 @@ class Card:
             self.klass = 'Demon'
             self.tavern_level = 1
             self.card_amount = 17
+            self.mechanics_list = []
         else:
             print('No such card yet')
 
@@ -57,3 +62,11 @@ class Card:
         elif buff_type == 'attack':
             self.attack += buff_value
         print(f'Card: {self.card_name}, new attack: {self.attack}, new hp {self.hp}')
+    
+    def get_object(self):
+        return self
+    
+    def trigger_buffs(self, played_card, tavern=None):
+        # При разыгрывании карты триггерит бафы
+        for mechanic in self.mechanics_list:
+            mechanic(self.get_object(), played_card, tavern).trigger_buffs()

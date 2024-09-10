@@ -39,7 +39,9 @@ class Fight:
                 self.attack(self.second_player_attacking_order, self.first_player_board)
             counter += 1
 
-        self.determine_winner()
+        print(f'delete later. First player board: {self.first_player_board}')
+        print(f'delete later. Second player board: {self.second_player_board}')
+        return self.determine_winner()
 
     def attack(self, attacking_order, defending_board):
         attacking_minion = attacking_order.pop(0)

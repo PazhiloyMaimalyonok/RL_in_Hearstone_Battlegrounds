@@ -1,4 +1,5 @@
 from mechanics_module import PlayedCardBuffMechanic
+import pandas as pd
 
 class Card:
     """Описание
@@ -14,39 +15,26 @@ class Card:
     Вопрос для МВП
         Что делать с триплетами?
     """
-    minions_list = ['Wrath_Weaver', 'Tavern_Tipper', 'Backstage_Security']
+    minions_list = list(pd.read_excel('cards_data.xlsx')['card_name'].values)
 
     def __init__(self, card_name):
-        if card_name == 'Wrath_Weaver':
-            self.card_name = card_name
-            self.attack = 1
-            self.hp = 3
-            self.type = 'Minion'
-            self.klass = 'Neutral'
-            self.tavern_level = 1
-            self.card_amount = 17
-            self.mechanics_list = [PlayedCardBuffMechanic]
-        elif card_name == 'Tavern_Tipper':
-            self.card_name = card_name
-            self.attack = 2
-            self.hp = 2
-            self.type = 'Minion'
-            self.klass = 'Neutral'
-            self.tavern_level = 1
-            self.card_amount = 17
-            self.mechanics_list = []
-        elif card_name == 'Backstage_Security':
-            # Доработать карту
-            self.card_name = card_name
-            self.attack = 4
-            self.hp = 4
-            self.type = 'Minion'
-            self.klass = 'Demon'
-            self.tavern_level = 1
-            self.card_amount = 17
-            self.mechanics_list = []
-        else:
-            print('No such card yet')
+        cards_data = pd.read_excel('cards_data.xlsx')
+        for index, row in cards_data.iterrows():
+            if row['card_name'] == card_name:
+                card_name = row['card_name']
+                attack = int(row['attack'])
+                hp = int(row['hp'])
+                type = row['type']
+                klass = row['klass']
+                tavern_level = int(row['tavern_level'])
+                card_amount = int(row['card_amount'])
+                if pd.notna(row['mechanics_list']):
+                    mechanics_list = [eval(mechanics) for mechanics in row['mechanics_list'].split(',')]
+                else:
+                    mechanics_list = []
+                break
+            else:
+                print('No such card yet')
 
     def card_info(self):
         return f'Card name: {self.card_name}, card attack: {self.attack}, card hp {self.hp}'

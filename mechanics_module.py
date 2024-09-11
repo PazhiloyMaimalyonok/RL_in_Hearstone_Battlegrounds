@@ -55,3 +55,13 @@ class PlayedCardBuffMechanic(Mechanics):
             if self.played_card.klass == 'Demon':
                 self.attack_buff += 2
                 self.hp_buff += 1
+        elif self.card.card_name in ['Molten_Rock']:
+            if self.played_card.klass == 'Elemental':
+                self.attack_buff += 0
+                self.hp_buff += 1
+        elif self.card.card_name in ['Swampstriker']:
+            if self.played_card.klass == 'Murloc':
+                self.attack_buff += 1
+                self.hp_buff += 0
+        else:
+            pass

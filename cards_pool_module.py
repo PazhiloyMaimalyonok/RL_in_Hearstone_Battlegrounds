@@ -27,4 +27,4 @@ class CardsPool:
         self.cards_pool.append(card)
         
 # a = CardsPool()
-# a.card_draw()
+# print([card.card_name for card in a.cards_pool])

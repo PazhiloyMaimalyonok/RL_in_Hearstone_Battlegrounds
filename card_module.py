@@ -15,28 +15,28 @@ class Card:
     Вопрос для МВП
         Что делать с триплетами?
     """
-    cards_data = pd.read_excel('cards_data.xlsx')
-    minions_list = list(cards_data[cards_data['use_flg'] == 1]['card_name'].values)
+    cards_data_outer = pd.read_excel('cards_data.xlsx')
+    minions_list = list(cards_data_outer[cards_data_outer['use_flg'] == 1]['card_name'].values)
 
     def __init__(self, card_name):
         cards_data = pd.read_excel('cards_data.xlsx')
-        cards_data = cards_data[cards_data['use_flg'] == 1]
-        for index, row in cards_data.iterrows():
-            if row['card_name'] == card_name:
-                self.card_name = row['card_name']
-                self.attack = int(row['attack'])
-                self.hp = int(row['hp'])
-                self.type = row['type']
-                self.klass = row['klass']
-                self.tavern_level = int(row['tavern_level'])
-                self.card_amount = int(row['card_amount'])
-                if pd.notna(row['mechanics_list']):
-                    self.mechanics_list = [eval(mechanics) for mechanics in row['mechanics_list'].split(',')]
-                else:
-                    self.mechanics_list = []
-                break
+        cards_data = cards_data[(cards_data['use_flg'] == 1) & (cards_data['card_name'] == card_name)]
+        if cards_data.shape[0] == 0:
+            raise ValueError("No such card yet")
+        elif cards_data.shape[0] > 1:
+            raise ValueError("Несколько карт с одинаковым названием")
+        for index, row in cards_data.iterrows(): # итерируется по одной строке
+            self.card_name = row['card_name']
+            self.attack = int(row['attack'])
+            self.hp = int(row['hp'])
+            self.type = row['type']
+            self.klass = row['klass']
+            self.tavern_level = int(row['tavern_level'])
+            self.card_amount = int(row['card_amount'])
+            if pd.notna(row['mechanics_list']):
+                self.mechanics_list = [eval(mechanics) for mechanics in row['mechanics_list'].split(',')]
             else:
-                print('No such card yet')
+                self.mechanics_list = []
 
     def card_info(self):
         return f'Card name: {self.card_name}, card attack: {self.attack}, card hp {self.hp}'

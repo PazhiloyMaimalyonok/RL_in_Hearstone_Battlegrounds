@@ -1,5 +1,12 @@
-from main import Game, Tavern
+# from main import Game, Tavern
+from classes.card_class import MinionCard
+from classes.player_class import Player
+from classes.deck_class import Deck
+from classes.tavern_class import Tavern
 
+player = Player()
+deck = Deck()
+tavern = Tavern(player, deck, 1)
 a = [1 , 2, 3 , 4]
 b = [int(x>2) for x in a]
 print(b)

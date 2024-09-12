@@ -15,23 +15,25 @@ class Card:
     Вопрос для МВП
         Что делать с триплетами?
     """
-    minions_list = list(pd.read_excel('cards_data.xlsx')['card_name'].values)
+    cards_data = pd.read_excel('cards_data.xlsx')
+    minions_list = list(cards_data[cards_data['use_flg'] == 1]['card_name'].values)
 
     def __init__(self, card_name):
         cards_data = pd.read_excel('cards_data.xlsx')
+        cards_data = cards_data[cards_data['use_flg'] == 1]
         for index, row in cards_data.iterrows():
             if row['card_name'] == card_name:
-                card_name = row['card_name']
-                attack = int(row['attack'])
-                hp = int(row['hp'])
-                type = row['type']
-                klass = row['klass']
-                tavern_level = int(row['tavern_level'])
-                card_amount = int(row['card_amount'])
+                self.card_name = row['card_name']
+                self.attack = int(row['attack'])
+                self.hp = int(row['hp'])
+                self.type = row['type']
+                self.klass = row['klass']
+                self.tavern_level = int(row['tavern_level'])
+                self.card_amount = int(row['card_amount'])
                 if pd.notna(row['mechanics_list']):
-                    mechanics_list = [eval(mechanics) for mechanics in row['mechanics_list'].split(',')]
+                    self.mechanics_list = [eval(mechanics) for mechanics in row['mechanics_list'].split(',')]
                 else:
-                    mechanics_list = []
+                    self.mechanics_list = []
                 break
             else:
                 print('No such card yet')

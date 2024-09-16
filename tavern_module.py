@@ -28,6 +28,9 @@ class Tavern:
         #Starting board minions
         for card_number in range(self.minions_per_reroll):
             self.tavern_board.append(self.game.card_draw())
+            
+    def get_object(self):
+        return self
     
     def tavern_info(self):
         return f'Tavern board: {[card.card_info() for card in self.tavern_board]}'
@@ -70,7 +73,7 @@ class Tavern:
     def update_board(self, played_card):
         # Метод проходится по каждой карте и ее бафам и смотрит, как она забафается при выставлении текущей карты на стол
         for minion in self.player_board:
-            minion.trigger_buffs(played_card)
+            minion.trigger_buffs(played_card, tavern = self.get_object())
             
 
     def sell(self, position):

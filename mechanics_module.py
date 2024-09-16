@@ -27,14 +27,20 @@ class Mechanics:
         # Расчитываю, какие бафы должна получить карта/таверна
         raise NotImplementedError("Subclass must implement trigger method")
     
+    def choose_buff_targets(self):
+        # Выбираю цели, которых буду бафать
+        raise NotImplementedError("Subclass must implement trigger method")
+    
     def trigger_buffs(self):
         # Вызываю бафы. Метод вызывается, чтобы просчитать бафы и забафать карту.
         # Вероятно это будет реализовано в этом(общем) классе
         ## Рассчитываю баффы
         self.calculate_buffs()
-        ## Реализую бафы
-        self.card.buff_card(self.hp_buff, 'hp')
-        self.card.buff_card(self.attack_buff, 'attack') # Могу ли я использовать сел.данные из подкласса
+        # Выбираю цели для бафа
+        for minion_to_buff in self.choose_buff_targets(): 
+            ## Реализую бафы
+            minion_to_buff.buff_card(self.hp_buff, 'hp')
+            minion_to_buff.buff_card(self.attack_buff, 'attack') # Могу ли я использовать сел.данные из подкласса
     
 class PlayedCardBuffMechanic(Mechanics):
     """Описание
@@ -48,7 +54,11 @@ class PlayedCardBuffMechanic(Mechanics):
     """
     def __init__(self, card, played_card, tavern=None):
         super().__init__(card, played_card, tavern) 
-        # self.buff_name = buff_name# like '1/4 wraith weaver buff'
+        
+    def choose_buff_targets(self) -> list:
+        # Выбираю цели, которых буду бафать
+        buff_targets_list = [self.card]
+        return buff_targets_list
         
     def calculate_buffs(self):
         if self.card.card_name in ['Wrath_Weaver']:
@@ -63,5 +73,37 @@ class PlayedCardBuffMechanic(Mechanics):
             if self.played_card.klass == 'Murloc' and self.card != self.played_card:
                 self.attack_buff += 1
                 self.hp_buff += 0
+        else:
+            pass
+        
+class BattlecryMechanic(Mechanics):
+    """Описание
+    Что сейчас класс собой представляет
+        --
+    Что хочу от класса
+        Класс, реализующий механику батлкраев
+    Мысли по улучшению
+        --
+    """
+    def __init__(self, card, played_card, tavern):
+        super().__init__(card, played_card, tavern) 
+        
+    def choose_buff_targets(self) -> list:
+        # Выбираю цели, которых буду бафать
+        buff_targets_list = []
+        if self.played_card.card_name == 'Coldlight_Seer' and self.card == self.played_card:
+            for minion in self.tavern.player_board:
+                if minion.klass == 'Murloc' and self.card != self.played_card:
+                    buff_targets_list.append(minion)
+        return buff_targets_list
+        
+    def calculate_buffs(self):
+        if self.played_card.card_name in ['Coldlight_Seer'] and self.card == self.played_card:
+            self.attack_buff += 0
+            self.hp_buff += 2
+        # elif self.card.card_name in ['Molten_Rock']:
+        #     if self.played_card.klass == 'Elemental' and self.card != self.played_card:
+        #         self.attack_buff += 0
+        #         self.hp_buff += 1
         else:
             pass

@@ -93,7 +93,7 @@ class BattlecryMechanic(Mechanics):
         buff_targets_list = []
         if self.played_card.card_name == 'Coldlight_Seer' and self.card == self.played_card:
             for minion in self.tavern.player_board:
-                if minion.klass == 'Murloc' and self.card != self.played_card:
+                if minion.klass == 'Murloc' and minion != self.card:
                     buff_targets_list.append(minion)
         return buff_targets_list
         

@@ -73,8 +73,7 @@ class Tavern:
     def update_board(self, played_card):
         # Метод проходится по каждой карте и ее бафам и смотрит, как она забафается при выставлении текущей карты на стол
         for minion in self.player_board:
-            minion.trigger_buffs(played_card, tavern = self.get_object())
-            
+            minion.trigger_buffs(played_card, tavern = self.get_object())            
 
     def sell(self, position):
         if position > len(self.player_board) - 1:

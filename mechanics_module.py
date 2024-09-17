@@ -4,6 +4,7 @@
 #     Card().call_mechanics() -- во время апдейта таверны прохожиться по всем картам и "звать механику"
 #     Добавить кэш разыгранной карты в play_card, чтобы при update_board() и/или call_mechanics() было понятно, от какой карты првоерять эффект
 #     У каждой карты есть список механик: врожденных и приобритенных. По каждому их них проходимся и они возвращают либо изменение, либо ничего
+import random 
 
 class Mechanics:
     """Описание
@@ -50,14 +51,35 @@ class PlayedCardBuffMechanic(Mechanics):
         Класс, который расчитывает бафы для карты в зависимости от разыгранной карты. А так же коллит карту забафаться.
         Вероятно, сейчас закину сюда несколько похожих механик через if. Потом их либо разнесу по классам, либо еще че придумаю
     Мысли по улучшению
+        Дублируются условия применения баффов в calculate_buffs и в choose_buff_targets
         Нужно добавить тип баффа (для красненького отдельный, для мэрлока отдельный)
+        
     """
-    def __init__(self, card, played_card, tavern=None):
+    def __init__(self, card, played_card, tavern):
         super().__init__(card, played_card, tavern) 
         
     def choose_buff_targets(self) -> list:
-        # Выбираю цели, которых буду бафать
+        # ПО умолчанию всегда бафает себя
         buff_targets_list = [self.card]
+        # Выбираю цели, которых буду бафать
+        if self.card.card_name in ['Party_Elemental']:
+            if self.played_card.klass == 'Elemental' and self.card != self.played_card:
+                buff_candidates = []
+                for minion in self.tavern.player_board:
+                    #второе условие, что в список карт под бафф не попадет только что разыгранная карта
+                    if minion.klass == 'Elemental' and minion != self.played_card: 
+                        buff_candidates.append(minion)
+                # По идее в buff_candidates всегда есть хотя бы одна карта - сам чел с механикой
+                buff_targets_list = [buff_candidates[random.randint(0, len(buff_candidates) - 1)]]
+        elif self.card.card_name in ['Saltscale_Honcho']:
+            if self.played_card.klass == 'Murloc' and self.card != self.played_card:
+                buff_candidates = []
+                for minion in self.tavern.player_board:
+                    #второе условие, что в список карт под бафф не попадет только что разыгранная карта
+                    if minion.klass == 'Murloc' and minion != self.played_card: 
+                        buff_candidates.append(minion)
+                # По идее в buff_candidates всегда есть хотя бы одна карта - сам чел с механикой
+                buff_targets_list = [buff_candidates[random.randint(0, len(buff_candidates) - 1)]]
         return buff_targets_list
         
     def calculate_buffs(self):
@@ -76,6 +98,14 @@ class PlayedCardBuffMechanic(Mechanics):
         elif self.card.card_name in ['Blazing_Skyfin']:
             if BattlecryMechanic in self.played_card.mechanics_list:
                 self.attack_buff += 1
+                self.hp_buff += 1
+        elif self.card.card_name in ['Party_Elemental']:
+            if self.played_card.klass == 'Elemental' and self.card != self.played_card:
+                self.attack_buff += 2
+                self.hp_buff += 1
+        elif self.card.card_name in ['Saltscale_Honcho']:
+            if self.played_card.klass == 'Murloc' and self.card != self.played_card:
+                self.attack_buff += 0
                 self.hp_buff += 1
         else:
             pass

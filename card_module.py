@@ -1,4 +1,4 @@
-from mechanics_module import PlayedCardBuffMechanic, BattlecryMechanic
+from mechanics_module import *
 import pandas as pd
 
 class Card:

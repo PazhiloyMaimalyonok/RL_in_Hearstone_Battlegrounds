@@ -73,6 +73,10 @@ class PlayedCardBuffMechanic(Mechanics):
             if self.played_card.klass == 'Murloc' and self.card != self.played_card:
                 self.attack_buff += 1
                 self.hp_buff += 0
+        elif self.card.card_name in ['Blazing_Skyfin']:
+            if BattlecryMechanic in self.played_card.mechanics_list:
+                self.attack_buff += 1
+                self.hp_buff += 1
         else:
             pass
         

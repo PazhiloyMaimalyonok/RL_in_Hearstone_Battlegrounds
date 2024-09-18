@@ -125,19 +125,47 @@ class BattlecryMechanic(Mechanics):
     def choose_buff_targets(self) -> list:
         # Выбираю цели, которых буду бафать
         buff_targets_list = []
-        if self.played_card.card_name == 'Coldlight_Seer' and self.card == self.played_card:
-            for minion in self.tavern.player_board:
-                if minion.klass == 'Murloc' and minion != self.card:
-                    buff_targets_list.append(minion)
+        if self.card == self.played_card:
+            if self.played_card.card_name == 'Coldlight_Seer':
+                for minion in self.tavern.player_board:
+                    if minion.klass == 'Murloc' and minion != self.card:
+                        buff_targets_list.append(minion)
+            elif self.played_card.card_name == 'Picky_Eater':
+                buff_targets_list = [self.card]
+            elif self.played_card.card_name == 'Mind_Muck':
+                possible_target_list = []
+                for minion in self.tavern.player_board:
+                    if minion.klass == 'Demon' and minion != self.card:
+                        possible_target_list.append(minion)
+                if possible_target_list != []:
+                    print(self.tavern.player_board_info(possible_target_list))
+                    print(f'Choose minions position. Starting from 0. Can use negatives')
+                    minion_to_buff_position = int(input())
+                    buff_targets_list = [possible_target_list[minion_to_buff_position]]
         return buff_targets_list
         
     def calculate_buffs(self):
-        if self.played_card.card_name in ['Coldlight_Seer'] and self.card == self.played_card:
-            self.attack_buff += 0
-            self.hp_buff += 2
-        # elif self.card.card_name in ['Molten_Rock']:
-        #     if self.played_card.klass == 'Elemental' and self.card != self.played_card:
-        #         self.attack_buff += 0
-        #         self.hp_buff += 1
-        else:
-            pass
+        if self.card == self.played_card:
+            if self.played_card.card_name in ['Coldlight_Seer']:
+                self.attack_buff += 0
+                self.hp_buff += 2
+            elif self.card.card_name in ['Picky_Eater']:
+                if self.tavern.tavern_board != []:
+                    minion_to_eat = self.tavern.tavern_board[random.randint(0, len(self.tavern.tavern_board) - 1)]
+                    self.attack_buff += minion_to_eat.attack
+                    self.hp_buff += minion_to_eat.hp
+                    self.tavern.eat_minion(minion_to_eat)
+            elif self.card.card_name in ['Mind_Muck']:
+                if self.tavern.tavern_board != []:
+                    # Условие, что на столе есть демоны помимо 3/2 Mind_Muck, которых можно забафать
+                    buff_targets_list = []
+                    for minion in self.tavern.player_board:
+                        if minion.klass == 'Demon' and minion != self.card:
+                            buff_targets_list.append(minion)
+                    if buff_targets_list != []:
+                        minion_to_eat = self.tavern.tavern_board[random.randint(0, len(self.tavern.tavern_board) - 1)]
+                        self.attack_buff += minion_to_eat.attack
+                        self.hp_buff += minion_to_eat.hp
+                        self.tavern.eat_minion(minion_to_eat)
+            else:
+                pass

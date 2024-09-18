@@ -38,8 +38,11 @@ class Tavern:
     def player_hand_info(self):
         return f'Player hand: {[card.card_info() for card in self.player_hand]}'
     
-    def player_board_info(self):
-        return f'Player board: {[card.card_info() for card in self.player_board]}'
+    def player_board_info(self, board = None):
+        if board == None:
+            return f'Player board: {[card.card_info() for card in self.player_board]}'
+        else:
+            return f'Player board: {[card.card_info() for card in board]}'
 
     def buy(self, position):
         #checking hand size
@@ -82,6 +85,16 @@ class Tavern:
             self.gold += 1 #Change for 3-3 and 2-3 pirates
             self.game.card_return_to_pool(self.player_board.pop(position)) #проверить, что это работает для таверн разных игроков
 
+    def eat_minion(self, minion):
+        if minion in self.tavern_board:
+            # eat
+            self.tavern_board.remove(minion)
+            # return to pool
+            self.game.card_return_to_pool(minion)
+        else:
+            print(f'minion not in tavern board')
+        pass
+        
     def reroll(self, reroll_type = 'usual'):
         if self.gold < 1 and reroll_type == 'usual':
             print('Not enough gold')

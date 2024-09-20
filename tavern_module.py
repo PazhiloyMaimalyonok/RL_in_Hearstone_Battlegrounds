@@ -32,6 +32,9 @@ class Tavern:
     def get_object(self):
         return self
     
+    def change_player_hp_during_turn(self, amount):
+        self.player_hp += amount
+    
     def tavern_info(self):
         return f'Tavern board: {[card.card_info() for card in self.tavern_board]}'
     
@@ -76,7 +79,7 @@ class Tavern:
     def update_board(self, played_card):
         # Метод проходится по каждой карте и ее бафам и смотрит, как она забафается при выставлении текущей карты на стол
         for minion in self.player_board:
-            minion.trigger_buffs(played_card, tavern = self.get_object())            
+            minion.trigger(played_card, tavern = self.get_object())            
 
     def sell(self, position):
         if position > len(self.player_board) - 1:

@@ -56,7 +56,7 @@ class Card:
     def get_object(self):
         return self
     
-    def trigger_buffs(self, played_card, tavern=None):
+    def trigger(self, played_card, tavern=None):
         # При разыгрывании карты триггерит бафы
         for mechanic in self.mechanics_list:
-            mechanic(self.get_object(), played_card, tavern).trigger_buffs()
+            mechanic(self.get_object(), played_card, tavern).trigger()

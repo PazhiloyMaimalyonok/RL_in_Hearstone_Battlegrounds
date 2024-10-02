@@ -1,3 +1,5 @@
+from card_module import *
+
 class Tavern:
     """Описание
     Что сейчас класс собой представляет
@@ -59,6 +61,12 @@ class Tavern:
             #return self.tavern_board.pop(position)
             self.gold -= 3
             return self.player_hand.append(self.tavern_board.pop(position))
+        
+    # def add_card_to_player_hand(self, card_name):
+    #     if Card(card_name).type == 'Minion':
+    #         self.player_hand.append(MinionCard(card_name))
+    #     else:
+    #         print('Is not able to add anything other than minions right now')
     
     def play_card(self, position):
         if position > len(self.player_hand) - 1:
@@ -86,7 +94,9 @@ class Tavern:
             print('Card index out of player_board range')
         else:
             self.gold += 1 #Change for 3-3 and 2-3 pirates
-            self.game.card_return_to_pool(self.player_board.pop(position)) #проверить, что это работает для таверн разных игроков
+            card_to_sell = self.player_board.pop(position)
+            # card_to_sell.trigger(played_card = card_to_sell, tavern = self)
+            self.game.card_return_to_pool(card_to_sell) #проверить, что это работает для таверн разных игроков
 
     def eat_minion(self, minion):
         if minion in self.tavern_board:

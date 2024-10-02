@@ -220,3 +220,21 @@ class BattlecryMechanic(Mechanics):
         if self.played_card.card_name == 'Backstage_Security':
             # Поменять потом это на метод внутри таверны, который уменьшает хп на 1
             self.tavern.change_player_hp_during_turn(amount = -1)
+
+# class SoldCardMechanic(Mechanics):
+#     """Описание
+#         Нужно добавить событие продажи карты, после которой эта механика будет работать
+#     """
+#     def __init__(self, card, played_card, tavern):
+#         super().__init__(card, played_card, tavern) 
+     
+#     # # ПОка это не надо   
+#     # def should_trigger(self):
+#     #     result = False
+#     #     # Бафает себя при розыгрыше карты
+#     #     if self.card.card_name == 'Sellemental':
+#     #         result = True
+#     #     return result  # Placeholder
+#     def trigger(self):
+#         if self.card.card_name == 'Sellemental':
+#             self.tavern.add_card_to_player_hand('Water_Droplet')

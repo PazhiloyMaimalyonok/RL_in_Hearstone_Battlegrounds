@@ -1,6 +1,7 @@
 from cards_pool_module import CardsPool
 from tavern_module import Tavern
 from fight_module import Fight
+from events_system_module import EventManager
 import random
 
 class Game:
@@ -14,6 +15,7 @@ class Game:
         --
     """
     def __init__(self, players_number = 2):
+        self.event_manager = EventManager()
         self.players_number = players_number
         self.cards_pool = CardsPool()
     

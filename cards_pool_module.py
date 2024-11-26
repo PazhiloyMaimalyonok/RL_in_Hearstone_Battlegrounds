@@ -25,7 +25,7 @@ class CardsPool:
 
     def card_return_to_pool(self, card: MinionCard):
         if card.card_name in MinionCard.minions_list:
-            self.cards_pool.append(card)
-        
+            original_card = MinionCard(card.card_name)  # Create a new card instance with original stats
+            self.cards_pool.append(original_card)        
 # a = CardsPool()
 # print([card.card_name for card in a.cards_pool])

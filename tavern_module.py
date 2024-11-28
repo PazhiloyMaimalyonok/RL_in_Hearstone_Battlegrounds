@@ -50,9 +50,9 @@ class Tavern:
         else:
             card = self.player_hand.pop(position)
             self.player_board.append(card)
-            card.enter_board(self.event_manager, self)  # Subscribe to events and set tavern reference
             played_card = card
             self.event_manager.emit(GameEvent(EventType.CARD_PLAYED, payload=played_card))
+            card.enter_board(self.event_manager, self)  # Subscribe to events and set tavern reference
             """Закомментил код снизу, так как он больше не нужен
             self.update_board(played_card)
 

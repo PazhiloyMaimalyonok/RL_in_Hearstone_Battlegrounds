@@ -21,7 +21,11 @@ class CardsPool:
         random.shuffle(self.cards_pool)
 
     def card_draw(self) -> MinionCard:
-        return self.cards_pool.pop()
+        if self.cards_pool:
+            index = random.randrange(len(self.cards_pool))  # <-- Modified
+            return self.cards_pool.pop(index)               # <-- Modified
+        else:
+            raise Exception("No cards left in the pool")
 
     def card_return_to_pool(self, card: MinionCard):
         if card.card_name in MinionCard.minions_list:

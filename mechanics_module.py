@@ -95,38 +95,16 @@ class BattlecryMechanic:
     """This class implements battlecry mechanics."""
     def __init__(self, card):
         self.card = card
-        self.event_subscribed = []
-        self.event_manager = None  # Will be set when subscribing
+        # Removed event subscription attributes and methods  # <-- Edited
 
-    def get_event_types(self):
-        return [EventType.CARD_PLAYED]
+    # Removed get_event_types, subscribe, and unsubscribe methods  # <-- Edited
 
-    def subscribe(self, event_manager, event_type):
-        self.event_manager = event_manager
-        if event_type not in self.event_subscribed:
-            event_manager.subscribe(event_type, self.trigger)
-            self.event_subscribed.append(event_type)
-            print(f"{self.card.card_name}'s mechanic subscribed to {event_type}")
-
-    def unsubscribe(self, event_type):
-        if event_type in self.event_subscribed and self.event_manager:
-            self.event_manager.unsubscribe(event_type, self.trigger)
-            self.event_subscribed.remove(event_type)
-            print(f"{self.card.card_name}'s mechanic unsubscribed from {event_type}")
-            if not self.event_subscribed:
-                self.event_manager = None
-
-    def should_trigger(self, played_card):
-        return self.card == played_card
-
-    def trigger(self, event):
-        played_card = event.payload
-        if self.should_trigger(played_card):
-            self.calculate_buffs()
-            for minion_to_buff in self.choose_buff_targets():
-                minion_to_buff.buff_card(self.hp_buff, 'hp')
-                minion_to_buff.buff_card(self.attack_buff, 'attack')
-            self.trigger_change_tavern()
+    def trigger(self):  # <-- Edited (Removed event parameter)
+        self.calculate_buffs()
+        for minion_to_buff in self.choose_buff_targets():
+            minion_to_buff.buff_card(self.hp_buff, 'hp')
+            minion_to_buff.buff_card(self.attack_buff, 'attack')
+        self.trigger_change_tavern()
 
     def calculate_buffs(self):
         self.attack_buff = 0

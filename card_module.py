@@ -24,11 +24,12 @@ class Card:
 
     def subscribe_mechanics(self, event_manager):
         for mechanic in self.mechanics_list:
-            for event_type in mechanic.get_event_types():
-                mechanic.subscribe(event_manager, event_type)
-                if event_type not in self.event_subscribed:
-                    self.event_subscribed.append(event_type)
-                    print(f"{self.card_name} subscribed to {event_type}")
+            if not isinstance(mechanic, BattlecryMechanic):  # <-- Added condition to skip BattlecryMechanic
+                for event_type in mechanic.get_event_types():
+                    mechanic.subscribe(event_manager, event_type)
+                    if event_type not in self.event_subscribed:
+                        self.event_subscribed.append(event_type)
+                        print(f"{self.card_name} subscribed to {event_type}")
 
     def unsubscribe_mechanics(self):
         for mechanic in self.mechanics_list:

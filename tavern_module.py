@@ -1,5 +1,6 @@
 from card_module import MinionCard
 from events_system_module import GameEvent, EventType
+from mechanics_module import *
 
 class Tavern:
     def __init__(self, game, player_name='Player1'):
@@ -50,9 +51,17 @@ class Tavern:
         else:
             card = self.player_hand.pop(position)
             self.player_board.append(card)
+            card.enter_board(self.event_manager, self)  # Subscribe to events and set tavern reference
+
+            # Trigger BattlecryMechanic directly if present
+            for mechanic in card.mechanics_list:
+                if isinstance(mechanic, BattlecryMechanic):  # <-- Added
+                    mechanic.trigger()                       # <-- Added
+                    print(f"{card.card_name}'s battlecry triggered.")  # <-- Added
+
+            # Emit the CardPlayed event after battlecry has resolved
             played_card = card
             self.event_manager.emit(GameEvent(EventType.CARD_PLAYED, payload=played_card))
-            card.enter_board(self.event_manager, self)  # Subscribe to events and set tavern reference
             """Закомментил код снизу, так как он больше не нужен
             self.update_board(played_card)
 
@@ -81,10 +90,18 @@ class Tavern:
         if self.gold < 1 and reroll_type == 'usual':
             print('Not enough gold')
         else:
-            for _ in range(len(self.tavern_board)):
-                self.game.card_return_to_pool(self.tavern_board.pop())
+            if reroll_type == 'usual':
+                self.gold -= 1  # Deduct 1 gold for usual reroll
+
+            # Return all minions on the tavern board to the cards pool
+            while self.tavern_board:
+                minion = self.tavern_board.pop()
+                self.game.card_return_to_pool(minion)
+
+            # Draw new minions from the cards pool
             for _ in range(self.minions_per_reroll):
-                self.tavern_board.append(self.game.card_draw())
+                new_minion = self.game.card_draw()
+                self.tavern_board.append(new_minion)
 
     def player_turn(self):
         self.reroll(reroll_type='start_of_the_turn_reroll')

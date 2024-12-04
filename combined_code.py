@@ -27,19 +27,11 @@ class Card:
 
     def subscribe_mechanics(self, event_manager):
         for mechanic in self.mechanics_list:
-            for event_type in mechanic.get_event_types():
-                mechanic.subscribe(event_manager, event_type)
-                if event_type not in self.event_subscribed:
-                    self.event_subscribed.append(event_type)
-                    print(f"{self.card_name} subscribed to {event_type}")
+            mechanic.subscribe(event_manager)
 
     def unsubscribe_mechanics(self):
         for mechanic in self.mechanics_list:
-            for event_type in mechanic.event_subscribed[:]:  # Copy the list to avoid modification during iteration
-                mechanic.unsubscribe(event_type)
-                if event_type in self.event_subscribed:
-                    self.event_subscribed.remove(event_type)
-                    print(f"{self.card_name} unsubscribed from {event_type}")
+            mechanic.unsubscribe_all()
 
     def enter_board(self, event_manager, tavern):
         self.tavern = tavern  # Set the tavern reference
@@ -294,6 +286,7 @@ game = Game()
 
 from card_module import MinionCard
 from events_system_module import GameEvent, EventType
+from mechanics_module import *
 
 class Tavern:
     def __init__(self, game, player_name='Player1'):
@@ -302,8 +295,8 @@ class Tavern:
         self.player_hand = []
         self.player_board = []
         self.tavern_board = []
-        self.gold = 3
-        self.player_hp = 5
+        self.gold = 10
+        self.player_hp = 30
         self.turn_number = 1
         self.level = 1
         self.minions_per_reroll = 3
@@ -344,9 +337,17 @@ class Tavern:
         else:
             card = self.player_hand.pop(position)
             self.player_board.append(card)
+            card.enter_board(self.event_manager, self)  # Subscribe to events and set tavern reference
+
+            # Trigger BattlecryMechanic directly if present
+            for mechanic in card.mechanics_list:
+                if isinstance(mechanic, BattlecryMechanic):  # <-- Added
+                    mechanic.trigger()                       # <-- Added
+                    print(f"{card.card_name}'s battlecry triggered.")  # <-- Added
+
+            # Emit the CardPlayed event after battlecry has resolved
             played_card = card
             self.event_manager.emit(GameEvent(EventType.CARD_PLAYED, payload=played_card))
-            card.enter_board(self.event_manager, self)  # Subscribe to events and set tavern reference
             """Закомментил код снизу, так как он больше не нужен
             self.update_board(played_card)
 
@@ -375,10 +376,18 @@ class Tavern:
         if self.gold < 1 and reroll_type == 'usual':
             print('Not enough gold')
         else:
-            for _ in range(len(self.tavern_board)):
-                self.game.card_return_to_pool(self.tavern_board.pop())
+            if reroll_type == 'usual':
+                self.gold -= 1  # Deduct 1 gold for usual reroll
+
+            # Return all minions on the tavern board to the cards pool
+            while self.tavern_board:
+                minion = self.tavern_board.pop()
+                self.game.card_return_to_pool(minion)
+
+            # Draw new minions from the cards pool
             for _ in range(self.minions_per_reroll):
-                self.tavern_board.append(self.game.card_draw())
+                new_minion = self.game.card_draw()
+                self.tavern_board.append(new_minion)
 
     def player_turn(self):
         self.reroll(reroll_type='start_of_the_turn_reroll')
@@ -432,7 +441,20 @@ class Tavern:
 import random
 from events_system_module import EventType, GameEvent, EventManager
 
-class PlayedCardBuffMechanic:
+class Mechanic:
+    """Base class for all mechanics."""
+    def __init__(self, card):
+        self.card = card
+
+    def subscribe(self, event_manager):
+        """Subscribe to events. Override in subclasses if needed."""
+        pass
+
+    def unsubscribe_all(self):
+        """Unsubscribe from all events. Override in subclasses if needed."""
+        pass
+
+class PlayedCardBuffMechanic(Mechanic):
     """This class calculates buffs for a card depending on a played card."""
     def __init__(self, card):
         self.card = card
@@ -442,20 +464,22 @@ class PlayedCardBuffMechanic:
     def get_event_types(self):
         return [EventType.CARD_PLAYED]
 
-    def subscribe(self, event_manager, event_type):
-        self.event_manager = event_manager  # Set the event manager
+    def subscribe(self, event_manager):
+        self.event_manager = event_manager
+        event_type = EventType.CARD_PLAYED
         if event_type not in self.event_subscribed:
             event_manager.subscribe(event_type, self.trigger)
             self.event_subscribed.append(event_type)
             print(f"{self.card.card_name}'s mechanic subscribed to {event_type}")
 
-    def unsubscribe(self, event_type):
-        if event_type in self.event_subscribed and self.event_manager:
-            self.event_manager.unsubscribe(event_type, self.trigger)
-            self.event_subscribed.remove(event_type)
-            print(f"{self.card.card_name}'s mechanic unsubscribed from {event_type}")
+    def unsubscribe_all(self):
+        if self.event_manager:
+            for event_type in self.event_subscribed[:]:
+                self.event_manager.unsubscribe(event_type, self.trigger)
+                self.event_subscribed.remove(event_type)
+                print(f"{self.card.card_name}'s mechanic unsubscribed from {event_type}")
             if not self.event_subscribed:
-                self.event_manager = None  # Clear event manager when no events are subscribed
+                self.event_manager = None
 
     def should_trigger(self, played_card):
         result = False
@@ -516,42 +540,20 @@ class PlayedCardBuffMechanic:
                 buff_targets_list = [random.choice(buff_candidates)]
         return buff_targets_list
 
-class BattlecryMechanic:
+class BattlecryMechanic(Mechanic):
     """This class implements battlecry mechanics."""
     def __init__(self, card):
         self.card = card
-        self.event_subscribed = []
-        self.event_manager = None  # Will be set when subscribing
+        self.event_subscribed = []  # Add this line
 
-    def get_event_types(self):
-        return [EventType.CARD_PLAYED]
+    # Removed get_event_types, subscribe, and unsubscribe methods  # <-- Edited
 
-    def subscribe(self, event_manager, event_type):
-        self.event_manager = event_manager
-        if event_type not in self.event_subscribed:
-            event_manager.subscribe(event_type, self.trigger)
-            self.event_subscribed.append(event_type)
-            print(f"{self.card.card_name}'s mechanic subscribed to {event_type}")
-
-    def unsubscribe(self, event_type):
-        if event_type in self.event_subscribed and self.event_manager:
-            self.event_manager.unsubscribe(event_type, self.trigger)
-            self.event_subscribed.remove(event_type)
-            print(f"{self.card.card_name}'s mechanic unsubscribed from {event_type}")
-            if not self.event_subscribed:
-                self.event_manager = None
-
-    def should_trigger(self, played_card):
-        return self.card == played_card
-
-    def trigger(self, event):
-        played_card = event.payload
-        if self.should_trigger(played_card):
-            self.calculate_buffs()
-            for minion_to_buff in self.choose_buff_targets():
-                minion_to_buff.buff_card(self.hp_buff, 'hp')
-                minion_to_buff.buff_card(self.attack_buff, 'attack')
-            self.trigger_change_tavern()
+    def trigger(self):  # <-- Edited (Removed event parameter)
+        self.calculate_buffs()
+        for minion_to_buff in self.choose_buff_targets():
+            minion_to_buff.buff_card(self.hp_buff, 'hp')
+            minion_to_buff.buff_card(self.attack_buff, 'attack')
+        self.trigger_change_tavern()
 
     def calculate_buffs(self):
         self.attack_buff = 0
@@ -668,7 +670,11 @@ class CardsPool:
         random.shuffle(self.cards_pool)
 
     def card_draw(self) -> MinionCard:
-        return self.cards_pool.pop()
+        if self.cards_pool:
+            index = random.randrange(len(self.cards_pool))  # <-- Modified
+            return self.cards_pool.pop(index)               # <-- Modified
+        else:
+            raise Exception("No cards left in the pool")
 
     def card_return_to_pool(self, card: MinionCard):
         if card.card_name in MinionCard.minions_list:

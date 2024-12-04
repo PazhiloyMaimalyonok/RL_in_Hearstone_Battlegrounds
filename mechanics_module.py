@@ -7,7 +7,20 @@
 import random
 from events_system_module import EventType, GameEvent, EventManager
 
-class PlayedCardBuffMechanic:
+class Mechanic:
+    """Base class for all mechanics."""
+    def __init__(self, card):
+        self.card = card
+
+    def subscribe(self, event_manager):
+        """Subscribe to events. Override in subclasses if needed."""
+        pass
+
+    def unsubscribe_all(self):
+        """Unsubscribe from all events. Override in subclasses if needed."""
+        pass
+
+class PlayedCardBuffMechanic(Mechanic):
     """This class calculates buffs for a card depending on a played card."""
     def __init__(self, card):
         self.card = card
@@ -17,20 +30,22 @@ class PlayedCardBuffMechanic:
     def get_event_types(self):
         return [EventType.CARD_PLAYED]
 
-    def subscribe(self, event_manager, event_type):
-        self.event_manager = event_manager  # Set the event manager
+    def subscribe(self, event_manager):
+        self.event_manager = event_manager
+        event_type = EventType.CARD_PLAYED
         if event_type not in self.event_subscribed:
             event_manager.subscribe(event_type, self.trigger)
             self.event_subscribed.append(event_type)
             print(f"{self.card.card_name}'s mechanic subscribed to {event_type}")
 
-    def unsubscribe(self, event_type):
-        if event_type in self.event_subscribed and self.event_manager:
-            self.event_manager.unsubscribe(event_type, self.trigger)
-            self.event_subscribed.remove(event_type)
-            print(f"{self.card.card_name}'s mechanic unsubscribed from {event_type}")
+    def unsubscribe_all(self):
+        if self.event_manager:
+            for event_type in self.event_subscribed[:]:
+                self.event_manager.unsubscribe(event_type, self.trigger)
+                self.event_subscribed.remove(event_type)
+                print(f"{self.card.card_name}'s mechanic unsubscribed from {event_type}")
             if not self.event_subscribed:
-                self.event_manager = None  # Clear event manager when no events are subscribed
+                self.event_manager = None
 
     def should_trigger(self, played_card):
         result = False
@@ -91,11 +106,11 @@ class PlayedCardBuffMechanic:
                 buff_targets_list = [random.choice(buff_candidates)]
         return buff_targets_list
 
-class BattlecryMechanic:
+class BattlecryMechanic(Mechanic):
     """This class implements battlecry mechanics."""
     def __init__(self, card):
         self.card = card
-        # Removed event subscription attributes and methods  # <-- Edited
+        self.event_subscribed = []  # Add this line
 
     # Removed get_event_types, subscribe, and unsubscribe methods  # <-- Edited
 

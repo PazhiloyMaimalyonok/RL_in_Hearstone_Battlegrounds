@@ -24,20 +24,11 @@ class Card:
 
     def subscribe_mechanics(self, event_manager):
         for mechanic in self.mechanics_list:
-            if not isinstance(mechanic, BattlecryMechanic):  # <-- Added condition to skip BattlecryMechanic
-                for event_type in mechanic.get_event_types():
-                    mechanic.subscribe(event_manager, event_type)
-                    if event_type not in self.event_subscribed:
-                        self.event_subscribed.append(event_type)
-                        print(f"{self.card_name} subscribed to {event_type}")
+            mechanic.subscribe(event_manager)
 
     def unsubscribe_mechanics(self):
         for mechanic in self.mechanics_list:
-            for event_type in mechanic.event_subscribed[:]:  # Copy the list to avoid modification during iteration
-                mechanic.unsubscribe(event_type)
-                if event_type in self.event_subscribed:
-                    self.event_subscribed.remove(event_type)
-                    print(f"{self.card_name} unsubscribed from {event_type}")
+            mechanic.unsubscribe_all()
 
     def enter_board(self, event_manager, tavern):
         self.tavern = tavern  # Set the tavern reference

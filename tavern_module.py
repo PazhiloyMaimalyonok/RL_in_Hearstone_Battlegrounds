@@ -9,8 +9,8 @@ class Tavern:
         self.player_hand = []
         self.player_board = []
         self.tavern_board = []
-        self.gold = 3
-        self.player_hp = 5
+        self.gold = 10
+        self.player_hp = 30
         self.turn_number = 1
         self.level = 1
         self.minions_per_reroll = 3

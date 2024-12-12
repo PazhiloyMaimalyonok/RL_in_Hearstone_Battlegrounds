@@ -13,14 +13,14 @@ class Card:
             raise ValueError("No such card yet")
         elif cards_data.shape[0] > 1:
             raise ValueError("Multiple cards with the same name")
-        for index, row in cards_data.iterrows():  # Iterate over a single row
+        for index, row in cards_data.iterrows():
             self.card_name = row['card_name']
             self.type = row['type']
             self.tavern_level = int(row['tavern_level'])
 
-        self.event_subscribed = []  # Track events the card is subscribed to
+        self.event_subscribed = []
         self.mechanics_list = []
-        self.tavern = None  # Reference to the tavern
+        self.tavern = None
 
     def subscribe_mechanics(self, event_manager):
         for mechanic in self.mechanics_list:
@@ -31,12 +31,12 @@ class Card:
             mechanic.unsubscribe_all()
 
     def enter_board(self, event_manager, tavern):
-        self.tavern = tavern  # Set the tavern reference
+        self.tavern = tavern
         self.subscribe_mechanics(event_manager)
 
     def leave_board(self):
         self.unsubscribe_mechanics()
-        self.tavern = None  # Clear the tavern reference
+        self.tavern = None
 
     def card_info(self):
         raise NotImplementedError("Subclass must implement the card_info method.")
@@ -62,7 +62,6 @@ class MinionCard(Card):
             self.tavern_level = int(row['tavern_level'])
             self.card_amount = int(row['card_amount'])
             if pd.notna(row['mechanics_list']):
-                # Instantiate mechanics with reference to this card
                 self.mechanics_list = [eval(mechanics)(self) for mechanics in row['mechanics_list'].split(',')]
             else:
                 self.mechanics_list = []
@@ -75,21 +74,23 @@ class MinionCard(Card):
         if buff_type not in allowed_buff_types:
             raise ValueError("Invalid buff type. Must be one of: {}".format(allowed_buff_types))
 
-        print(f'Card: {self.card_name}, original attack: {self.attack}, original hp: {self.hp}')
+        original_attack = self.attack
+        original_hp = self.hp
+
         if buff_type == 'hp':
             self.hp += buff_value
         elif buff_type == 'attack':
             self.attack += buff_value
-        print(f'Card: {self.card_name}, new attack: {self.attack}, new hp: {self.hp}')
 
-    # Remove old subscribe/unsubscribe methods as they are handled in the base class
-
-    def trigger(self, played_card):
-        for mechanic in self.mechanics_list:
-            mechanic.trigger(GameEvent(EventType.CARD_PLAYED, payload=played_card))
-
-# SpellCard remains unchanged...
-
+        # Instead of printing, we return the before and after stats
+        buff_info = {
+            'card_name': self.card_name,
+            'original_attack': original_attack,
+            'original_hp': original_hp,
+            'new_attack': self.attack,
+            'new_hp': self.hp
+        }
+        return buff_info
 
 class SpellCard(Card):
     def __init__(self, card_name):
@@ -99,8 +100,8 @@ class SpellCard(Card):
         if cards_data.shape[0] == 0:
             raise ValueError("No such spell yet")
         elif cards_data.shape[0] > 1:
-            raise ValueError("Несколько карт с одинаковым названием")
-        for index, row in cards_data.iterrows():  # итерируется по одной строке
+            raise ValueError("Multiple cards with the same name")
+        for index, row in cards_data.iterrows():
             self.card_name = row['card_name']
             self.tavern_level = int(row['tavern_level'])
             self.card_amount = int(row['card_amount'])
@@ -114,7 +115,5 @@ class SpellCard(Card):
         return f'{info}, Effect: {self.effect}'
 
     def trigger(self, played_card, tavern=None):
-        # Implement spell-specific mechanics if any
         for mechanic in self.spell_effect_list:
             mechanic(card=self, played_card=played_card, tavern=tavern).trigger()
-

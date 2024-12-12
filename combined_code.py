@@ -16,14 +16,14 @@ class Card:
             raise ValueError("No such card yet")
         elif cards_data.shape[0] > 1:
             raise ValueError("Multiple cards with the same name")
-        for index, row in cards_data.iterrows():  # Iterate over a single row
+        for index, row in cards_data.iterrows():
             self.card_name = row['card_name']
             self.type = row['type']
             self.tavern_level = int(row['tavern_level'])
 
-        self.event_subscribed = []  # Track events the card is subscribed to
+        self.event_subscribed = []
         self.mechanics_list = []
-        self.tavern = None  # Reference to the tavern
+        self.tavern = None
 
     def subscribe_mechanics(self, event_manager):
         for mechanic in self.mechanics_list:
@@ -34,12 +34,12 @@ class Card:
             mechanic.unsubscribe_all()
 
     def enter_board(self, event_manager, tavern):
-        self.tavern = tavern  # Set the tavern reference
+        self.tavern = tavern
         self.subscribe_mechanics(event_manager)
 
     def leave_board(self):
         self.unsubscribe_mechanics()
-        self.tavern = None  # Clear the tavern reference
+        self.tavern = None
 
     def card_info(self):
         raise NotImplementedError("Subclass must implement the card_info method.")
@@ -65,7 +65,6 @@ class MinionCard(Card):
             self.tavern_level = int(row['tavern_level'])
             self.card_amount = int(row['card_amount'])
             if pd.notna(row['mechanics_list']):
-                # Instantiate mechanics with reference to this card
                 self.mechanics_list = [eval(mechanics)(self) for mechanics in row['mechanics_list'].split(',')]
             else:
                 self.mechanics_list = []
@@ -78,21 +77,23 @@ class MinionCard(Card):
         if buff_type not in allowed_buff_types:
             raise ValueError("Invalid buff type. Must be one of: {}".format(allowed_buff_types))
 
-        print(f'Card: {self.card_name}, original attack: {self.attack}, original hp: {self.hp}')
+        original_attack = self.attack
+        original_hp = self.hp
+
         if buff_type == 'hp':
             self.hp += buff_value
         elif buff_type == 'attack':
             self.attack += buff_value
-        print(f'Card: {self.card_name}, new attack: {self.attack}, new hp: {self.hp}')
 
-    # Remove old subscribe/unsubscribe methods as they are handled in the base class
-
-    def trigger(self, played_card):
-        for mechanic in self.mechanics_list:
-            mechanic.trigger(GameEvent(EventType.CARD_PLAYED, payload=played_card))
-
-# SpellCard remains unchanged...
-
+        # Instead of printing, we return the before and after stats
+        buff_info = {
+            'card_name': self.card_name,
+            'original_attack': original_attack,
+            'original_hp': original_hp,
+            'new_attack': self.attack,
+            'new_hp': self.hp
+        }
+        return buff_info
 
 class SpellCard(Card):
     def __init__(self, card_name):
@@ -102,8 +103,8 @@ class SpellCard(Card):
         if cards_data.shape[0] == 0:
             raise ValueError("No such spell yet")
         elif cards_data.shape[0] > 1:
-            raise ValueError("Несколько карт с одинаковым названием")
-        for index, row in cards_data.iterrows():  # итерируется по одной строке
+            raise ValueError("Multiple cards with the same name")
+        for index, row in cards_data.iterrows():
             self.card_name = row['card_name']
             self.tavern_level = int(row['tavern_level'])
             self.card_amount = int(row['card_amount'])
@@ -117,10 +118,8 @@ class SpellCard(Card):
         return f'{info}, Effect: {self.effect}'
 
     def trigger(self, played_card, tavern=None):
-        # Implement spell-specific mechanics if any
         for mechanic in self.spell_effect_list:
             mechanic(card=self, played_card=played_card, tavern=tavern).trigger()
-
 
 # ------- fight_module.py -------
 
@@ -129,63 +128,55 @@ import random
 import numpy as np
 
 class Fight:
-    """Описание
-    Что сейчас класс собой представляет
-        Класс отвечает за файт между двумя тавернами
-    Что хочу от класса
-        Хочу, чтобы правильно работал
-        Надо подумать, как сюда добавить всякие интеракции
-    Мысли по улучшению
-        Как добавить механики типа секретов?
-        Как добавить баффы, которые получает пользователь во время боя, а они сохраняются на всю жизнь
-    Вопрос для МВП
-        --
-    """
     def __init__(self, first_player, second_player):
         self.first_player = first_player
         self.second_player = second_player
         self.first_player_board = [copy.deepcopy(minion) for minion in first_player.player_board]
         self.second_player_board = [copy.deepcopy(minion) for minion in second_player.player_board]
-        self.first_player_attacking_order = self.first_player_board
-        self.second_player_attacking_order = self.second_player_board
+        self.first_player_attacking_order = self.first_player_board.copy()
+        self.second_player_attacking_order = self.second_player_board.copy()
+        self.fight_log = []  # Collect fight events for logging or display
 
     def simulate(self):
-        # Решаю, кто первый будет атаковая. Задача каунтера -- передавать инициативу атаки от одного другому
         len_first_board = len(self.first_player_board)
         len_second_board = len(self.second_player_board)
         if len_first_board == len_second_board:
             counter = random.randint(0, 1)
         else:
             counter = np.argmax([len_first_board, len_second_board])
-        # Мб вынести определения, кто первый атакует или вообще определение кто в принципе атакует в отедльную функцию
         while self.first_player_board and self.second_player_board:
             if counter % 2 == 0:
                 self.attack(self.first_player_attacking_order, self.second_player_board)
             else:
                 self.attack(self.second_player_attacking_order, self.first_player_board)
             counter += 1
-
         return self.determine_winner()
 
     def attack(self, attacking_order, defending_board):
+        if not attacking_order or not defending_board:
+            return
         attacking_minion = attacking_order.pop(0)
         defending_minion = random.choice(defending_board)
 
-        print(f"Attacking minion: {attacking_minion.card_info()}")
-        print(f"Defending minion: {defending_minion.card_info()}")
-
+        # Collect attack event data
+        attack_event = {
+            'attacking_minion': attacking_minion.card_info(),
+            'defending_minion': defending_minion.card_info(),
+        }
         self.resolve_attack(attacking_minion, defending_minion)
 
-        print(f"Attacking minion stats after attack: {attacking_minion.card_info()}")
-        print(f"Defending minion stats after attack: {defending_minion.card_info()}")
+        # Update attack event with post-attack stats
+        attack_event.update({
+            'attacking_minion_after': attacking_minion.card_info(),
+            'defending_minion_after': defending_minion.card_info(),
+        })
+        self.fight_log.append(attack_event)
 
-        # Добавляю существо в конец очереди атаки, если он не умер
         if attacking_minion.hp > 0:
             attacking_order.append(attacking_minion)
-        
+
     def resolve_attack(self, attacking_minion, defending_minion):
         attacking_minion.hp -= defending_minion.attack
-        
         defending_minion.hp -= attacking_minion.attack
 
         if attacking_minion.hp <= 0:
@@ -196,21 +187,27 @@ class Fight:
     def remove_minion(self, minion):
         if minion in self.first_player_board:
             self.first_player_board.remove(minion)
-            # self.first_player_attacking_order.remove(minion)
         elif minion in self.second_player_board:
             self.second_player_board.remove(minion)
-            # self.second_player_attacking_order.remove(minion)
 
     def determine_winner(self):
+        result = {}
         if self.first_player_board and not self.second_player_board:
-            print(f"Player {self.first_player.player_name} wins!")
-            return 0, sum([minion.tavern_level for minion in self.first_player_board]) + self.first_player.level
+            result['winner'] = self.first_player.player_name
+            result['loser'] = self.second_player.player_name
+            damage = sum([minion.tavern_level for minion in self.first_player_board]) + self.first_player.level
+            result['damage'] = damage
+            return 0, damage, result
         elif self.second_player_board and not self.first_player_board:
-            print(f"Player {self.second_player.player_name} wins!")
-            return 1, sum([minion.tavern_level for minion in self.second_player_board]) + self.second_player.level
+            result['winner'] = self.second_player.player_name
+            result['loser'] = self.first_player.player_name
+            damage = sum([minion.tavern_level for minion in self.second_player_board]) + self.second_player.level
+            result['damage'] = damage
+            return 1, damage, result
         else:
-            print("It's a tie!")
-            return -1, 0
+            result['tie'] = True
+            return -1, 0, result
+
 # ------- game_module.py -------
 
 from cards_pool_module import CardsPool
@@ -220,45 +217,39 @@ from events_system_module import EventManager
 import random
 
 class Game:
-    """Описание
-    Что сейчас класс собой представляет
-        Класс для партии игры. Определяет очередность действий игроков, выбирает следующего противника
-        , рассчитывает урон после сражения, определяет, кто победил в партии
-    Что хочу от класса
-        --
-    Мысли по улучшению
-        --
-    """
-    def __init__(self, players_number = 2):
+    def __init__(self, players_number=2):
         self.event_manager = EventManager()
         self.players_number = players_number
         self.cards_pool = CardsPool()
-    
-    def create_players_taverns(self, agreement = 0):
-        # Handle player input and create taverns
-        # agreement = int(input("Would you like to name players? 1 - Yes, 0 - No"))
-        if agreement == 1:
-            players_names = [player_name for player_name in input("Enter players names like this 'Player1 Player2'").split()]
+        self.players_taverns = []
+        self.turn_number = 1  # Added to keep track of turns
+
+    def create_players_taverns(self, player_names=None):
+        if player_names:
+            players_names = player_names
         else:
             players_names = [f"Player{i+1}" for i in range(self.players_number)]
-        return [Tavern(self, player_name=player_name) for player_name in players_names]
-    
+        self.players_taverns = [Tavern(self, player_name=name) for name in players_names]
+        return self.players_taverns
+
     def card_draw(self):
         return self.cards_pool.card_draw()
 
     def card_return_to_pool(self, card):
         self.cards_pool.card_return_to_pool(card)
 
-    def play_round(self, players_taverns):
-        # Play a round of the game
-        for player in players_taverns:
+    def play_round(self):
+        round_log = []
+        for player in self.players_taverns:
             player.player_turn()
-        fighting_spisok = list(players_taverns)
-        while len(fighting_spisok) > 1:
-            fighter1, fighter2 = random.sample(fighting_spisok, 2)
-            fighting_spisok.remove(fighter1)
-            fighting_spisok.remove(fighter2)
-            player_won, damage_dealt = Fight(fighter1, fighter2).simulate()
+        fighting_list = list(self.players_taverns)
+        while len(fighting_list) > 1:
+            fighter1, fighter2 = random.sample(fighting_list, 2)
+            fighting_list.remove(fighter1)
+            fighting_list.remove(fighter2)
+            fight = Fight(fighter1, fighter2)
+            player_won, damage_dealt, fight_result = fight.simulate()
+            round_log.append(fight_result)
             if player_won == -1:
                 pass
             elif player_won == 0:
@@ -266,22 +257,32 @@ class Game:
             elif player_won == 1:
                 fighter1.player_hp -= damage_dealt
             else:
-                print("error")
-        for player in players_taverns:
-            if player.player_hp <= 0:
-                players_taverns.remove(player)
+                pass
+        self.players_taverns = [player for player in self.players_taverns if player.player_hp > 0]
+        self.turn_number += 1
+        return round_log
 
-    def declare_winner(self, players_taverns):
-        # Declare the winner
-        print(f"Player {players_taverns[0].player_name} won")
-        
-    def play_game(self):
-        players_taverns = self.create_players_taverns()
-        while len(players_taverns) > 1:
-            self.play_round(players_taverns)
-        self.declare_winner(players_taverns)
-        
-game = Game()
+    def declare_winner(self):
+        if self.players_taverns:
+            winner = self.players_taverns[0].player_name
+            return winner
+        return None
+
+    def play_game(self, player_names=None):
+        self.create_players_taverns(player_names)
+        game_log = []
+        while len(self.players_taverns) > 1:
+            round_log = self.play_round()
+            game_log.append(round_log)
+        winner = self.declare_winner()
+        return winner, game_log
+
+    def reset(self):
+        self.cards_pool = CardsPool()
+        self.event_manager = EventManager()
+        self.players_taverns = []
+        self.turn_number = 1
+
 # ------- tavern_module.py -------
 
 from card_module import MinionCard
@@ -300,166 +301,133 @@ class Tavern:
         self.turn_number = 1
         self.level = 1
         self.minions_per_reroll = 3
-        self.max_player_board_size = 7  # Added this line to define the attribute
-        self.event_manager = self.game.event_manager  # Reference to the game's event manager
+        self.max_player_board_size = 7
+        self.event_manager = self.game.event_manager
 
     def get_object(self):
         return self
-
-    def tavern_info(self):
-        return f'Tavern board: {[minion.card_info() for minion in self.tavern_board]}'
-
-    def player_hand_info(self):
-        return f'Player hand: {[card.card_info() for card in self.player_hand]}'
-
-    def player_board_info(self):
-        return f'Player board: {[card.card_info() for card in self.player_board]}'
 
     def change_player_hp_during_turn(self, amount):
         self.player_hp += amount
 
     def buy(self, position):
-        if position > len(self.tavern_board) - 1:
-            print('Card index out of tavern_board range')
+        if position > len(self.tavern_board) - 1 or position < 0:
+            return {'error': 'Card index out of tavern_board range'}
         elif self.gold < 3:
-            print('Not enough gold')
+            return {'error': 'Not enough gold'}
         elif len(self.player_hand) >= 10:
-            print('Player hand is full')
+            return {'error': 'Player hand is full'}
         else:
             self.gold -= 3
-            self.player_hand.append(self.tavern_board.pop(position))
+            bought_card = self.tavern_board.pop(position)
+            self.player_hand.append(bought_card)
+            return {'action': 'buy', 'card': bought_card.card_info()}
 
     def play_card(self, position):
-        if position > len(self.player_hand) - 1:
-            print('Card index out of player_hand range')
+        if position > len(self.player_hand) - 1 or position < 0:
+            return {'error': 'Card index out of player_hand range'}
         elif len(self.player_board) >= self.max_player_board_size:
-            print('Player board is full')
+            return {'error': 'Player board is full'}
         else:
             card = self.player_hand.pop(position)
             self.player_board.append(card)
-            card.enter_board(self.event_manager, self)  # Subscribe to events and set tavern reference
+            card.enter_board(self.event_manager, self)
 
             # Trigger BattlecryMechanic directly if present
             for mechanic in card.mechanics_list:
-                if isinstance(mechanic, BattlecryMechanic):  # <-- Added
-                    mechanic.trigger()                       # <-- Added
-                    print(f"{card.card_name}'s battlecry triggered.")  # <-- Added
-
-            # Emit the CardPlayed event after battlecry has resolved
+                if isinstance(mechanic, BattlecryMechanic):
+                    mechanic.trigger()
             played_card = card
             self.event_manager.emit(GameEvent(EventType.CARD_PLAYED, payload=played_card))
-            """Закомментил код снизу, так как он больше не нужен
-            self.update_board(played_card)
-
-    def update_board(self, played_card):
-        for minion in self.player_board:
-            minion.trigger(played_card)
-            """
+            return {'action': 'play_card', 'card': card.card_info()}
 
     def sell(self, position):
-        if position > len(self.player_board) - 1:
-            print('Card index out of player_board range')
+        if position > len(self.player_board) - 1 or position < 0:
+            return {'error': 'Card index out of player_board range'}
         else:
             self.gold += 1
             card_to_sell = self.player_board.pop(position)
             card_to_sell.leave_board()
             self.game.card_return_to_pool(card_to_sell)
+            return {'action': 'sell', 'card': card_to_sell.card_info()}
 
     def eat_minion(self, minion):
         if minion in self.tavern_board:
             self.tavern_board.remove(minion)
             self.game.card_return_to_pool(minion)
         else:
-            print(f'Minion not in tavern board')
+            pass  # Minion not in tavern board
 
     def reroll(self, reroll_type='usual'):
         if self.gold < 1 and reroll_type == 'usual':
-            print('Not enough gold')
+            return {'error': 'Not enough gold'}
         else:
             if reroll_type == 'usual':
-                self.gold -= 1  # Deduct 1 gold for usual reroll
+                self.gold -= 1
 
-            # Return all minions on the tavern board to the cards pool
             while self.tavern_board:
                 minion = self.tavern_board.pop()
                 self.game.card_return_to_pool(minion)
 
-            # Draw new minions from the cards pool
             for _ in range(self.minions_per_reroll):
                 new_minion = self.game.card_draw()
                 self.tavern_board.append(new_minion)
+            return {'action': 'reroll', 'tavern_board': [minion.card_info() for minion in self.tavern_board]}
 
-    def player_turn(self):
+    def start_of_turn(self):
         self.reroll(reroll_type='start_of_the_turn_reroll')
         self.gold = min(2 + 1 * self.turn_number, 10)
-        print(f'-------------------------Player {self.player_name} turn-------------------------')
-        print(self.tavern_info())
-        print(self.player_hand_info())
-        print(self.player_board_info())
-        print(f'Players gold: {self.gold}, players hp: {self.player_hp}, players tavern level: {self.level}')
-        action_number = -99
-        while action_number != 6:
-            print('Print action number: 1 - buy a minion, 2 - play a card, 3 - sell a minion, 4 - reroll, 5 - show stats, 6 - end the turn')
-            action_number = int(input())
+    
+    def player_turn(self, action_list=None):
+        if action_list is None:
+            action_list = []
+        self.reroll(reroll_type='start_of_the_turn_reroll')
+        self.gold = min(2 + 1 * self.turn_number, 10)
+        turn_log = []
+        for action in action_list:
+            action_number = action.get('action_type')
+            position = action.get('position', None)
             if action_number == 1:
-                print(self.tavern_info())
-                print('Choose minion position. Starting from 0. Can use negatives')
-                position = int(input())
-                self.buy(position)
+                result = self.buy(position)
+                turn_log.append(result)
             elif action_number == 2:
-                print(self.player_hand_info())
-                print('Choose card position. Starting from 0. Can use negatives')
-                position = int(input())
-                self.play_card(position)
+                result = self.play_card(position)
+                turn_log.append(result)
             elif action_number == 3:
-                print(self.player_board_info())
-                print('Choose minion position. Starting from 0. Can use negatives')
-                position = int(input())
-                self.sell(position)
+                result = self.sell(position)
+                turn_log.append(result)
             elif action_number == 4:
-                self.reroll()
-                print(self.tavern_info())
+                result = self.reroll()
+                turn_log.append(result)
             elif action_number == 5:
-                print(self.tavern_info())
-                print(self.player_hand_info())
-                print(self.player_board_info())
-                print(f'Players gold: {self.gold}, players hp: {self.player_hp}, players tavern level: {self.level}')
+                pass  # Show stats can be handled by the interface
             elif action_number == 6:
-                pass
+                break  # End the turn
             else:
-                print('Wrong number')
+                turn_log.append({'error': 'Invalid action number'})
         self.turn_number += 1
+        return turn_log
 
 # ------- mechanics_module.py -------
 
-
-# Видимо нужны:
-#     update_board() для таверны
-#     Card().call_mechanics() -- во время апдейта таверны прохожиться по всем картам и "звать механику"
-#     Добавить кэш разыгранной карты в play_card, чтобы при update_board() и/или call_mechanics() было понятно, от какой карты првоерять эффект
-#     У каждой карты есть список механик: врожденных и приобритенных. По каждому их них проходимся и они возвращают либо изменение, либо ничего
 import random
 from events_system_module import EventType, GameEvent, EventManager
 
 class Mechanic:
-    """Base class for all mechanics."""
     def __init__(self, card):
         self.card = card
 
     def subscribe(self, event_manager):
-        """Subscribe to events. Override in subclasses if needed."""
         pass
 
     def unsubscribe_all(self):
-        """Unsubscribe from all events. Override in subclasses if needed."""
         pass
 
 class PlayedCardBuffMechanic(Mechanic):
-    """This class calculates buffs for a card depending on a played card."""
     def __init__(self, card):
-        self.card = card
+        super().__init__(card)
         self.event_subscribed = []
-        self.event_manager = None  # Will be set when subscribing
+        self.event_manager = None
 
     def get_event_types(self):
         return [EventType.CARD_PLAYED]
@@ -470,14 +438,12 @@ class PlayedCardBuffMechanic(Mechanic):
         if event_type not in self.event_subscribed:
             event_manager.subscribe(event_type, self.trigger)
             self.event_subscribed.append(event_type)
-            print(f"{self.card.card_name}'s mechanic subscribed to {event_type}")
 
     def unsubscribe_all(self):
         if self.event_manager:
             for event_type in self.event_subscribed[:]:
                 self.event_manager.unsubscribe(event_type, self.trigger)
                 self.event_subscribed.remove(event_type)
-                print(f"{self.card.card_name}'s mechanic unsubscribed from {event_type}")
             if not self.event_subscribed:
                 self.event_manager = None
 
@@ -499,8 +465,9 @@ class PlayedCardBuffMechanic(Mechanic):
         if self.should_trigger(played_card):
             self.calculate_buffs()
             for minion_to_buff in self.choose_buff_targets():
-                minion_to_buff.buff_card(self.hp_buff, 'hp')
-                minion_to_buff.buff_card(self.attack_buff, 'attack')
+                buff_info_hp = minion_to_buff.buff_card(self.hp_buff, 'hp')
+                buff_info_attack = minion_to_buff.buff_card(self.attack_buff, 'attack')
+                # You can collect buff_info_hp and buff_info_attack if needed
 
     def calculate_buffs(self):
         self.attack_buff = 0
@@ -528,7 +495,7 @@ class PlayedCardBuffMechanic(Mechanic):
             pass
 
     def choose_buff_targets(self) -> list:
-        tavern = self.card.tavern  # Reference to the tavern
+        tavern = self.card.tavern
         buff_targets_list = [self.card]
         if self.card.card_name in ['Party_Elemental']:
             buff_candidates = [minion for minion in tavern.player_board if minion.klass == 'Elemental' and minion != self.card]
@@ -541,18 +508,16 @@ class PlayedCardBuffMechanic(Mechanic):
         return buff_targets_list
 
 class BattlecryMechanic(Mechanic):
-    """This class implements battlecry mechanics."""
     def __init__(self, card):
-        self.card = card
-        self.event_subscribed = []  # Add this line
+        super().__init__(card)
+        self.event_subscribed = []
 
-    # Removed get_event_types, subscribe, and unsubscribe methods  # <-- Edited
-
-    def trigger(self):  # <-- Edited (Removed event parameter)
+    def trigger(self):
         self.calculate_buffs()
         for minion_to_buff in self.choose_buff_targets():
-            minion_to_buff.buff_card(self.hp_buff, 'hp')
-            minion_to_buff.buff_card(self.attack_buff, 'attack')
+            buff_info_hp = minion_to_buff.buff_card(self.hp_buff, 'hp')
+            buff_info_attack = minion_to_buff.buff_card(self.attack_buff, 'attack')
+            # Collect buff_info_hp and buff_info_attack if needed
         self.trigger_change_tavern()
 
     def calculate_buffs(self):
@@ -586,24 +551,8 @@ class BattlecryMechanic(Mechanic):
         elif self.card.card_name == 'Picky_Eater':
             buff_targets_list = [self.card]
         elif self.card.card_name == 'Mind_Muck':
-            possible_target_list = [minion for minion in tavern.player_board if minion.klass == 'Demon' and minion != self.card]
-            if possible_target_list:
-                print('Possible targets:')
-                for idx, minion in enumerate(possible_target_list):
-                    print(f'{idx}: {minion.card_info()}')
-                while True:
-                    try:
-                        choice = int(input('Choose minion position (starting from 0): '))
-                        if 0 <= choice < len(possible_target_list):
-                            buff_targets_list = [possible_target_list[choice]]
-                            break
-                        else:
-                            print('Invalid choice. Try again.')
-                    except ValueError:
-                        print('Please enter a valid integer.')
-            else:
-                print('No valid targets to buff.')
-                buff_targets_list = []
+            buff_targets_list = [minion for minion in tavern.player_board if minion.klass == 'Demon' and minion != self.card]
+            # Selection logic can be implemented in the interface
         return buff_targets_list
 
     def trigger_change_tavern(self):
@@ -634,7 +583,6 @@ class EventManager:
         self.subscribers[event_type].append(callback)
 
     def unsubscribe(self, event_type, callback):
-        """Unsubscribe a specific callback from an event."""
         if event_type in self.subscribers and callback in self.subscribers[event_type]:
             self.subscribers[event_type].remove(callback)
 
@@ -645,23 +593,181 @@ class EventManager:
 
 
 
+
+# ------- command_line_interface_module.py -------
+
+def get_player_action_cli():
+    print('Choose an action number:')
+    print('1 - Buy a minion')
+    print('2 - Play a card')
+    print('3 - Sell a minion')
+    print('4 - Reroll')
+    print('5 - Show stats')
+    print('6 - End the turn')
+
+    while True:
+        try:
+            action_number = int(input())
+            if action_number in [1, 2, 3, 4, 5, 6]:
+                break
+            else:
+                print("Invalid choice. Try again:")
+        except ValueError:
+            print("Please enter a valid integer for the action number.")
+
+    position = None
+    if action_number in [1, 2, 3]:  # Actions that require a position
+        print('Enter the position (starting from 0):')
+        while True:
+            try:
+                position = int(input())
+                break
+            except ValueError:
+                print("Please enter a valid integer for position.")
+
+    return {'action_type': action_number, 'position': position}
+
+
+def display_tavern_info(tavern):
+    tavern_board_info = [minion.card_info() for minion in tavern.tavern_board]
+    print(f'Tavern board: {tavern_board_info}')
+
+
+def display_player_hand(tavern):
+    hand_info = [card.card_info() for card in tavern.player_hand]
+    print(f'Player hand: {hand_info}')
+
+
+def display_player_board(tavern):
+    board_info = [card.card_info() for card in tavern.player_board]
+    print(f'Player board: {board_info}')
+
+
+def display_player_stats(tavern):
+    print(f'Player gold: {tavern.gold}, HP: {tavern.player_hp}, Tavern level: {tavern.level}')
+
+
+def display_turn_log(turn_log):
+    for i, entry in enumerate(turn_log, start=1):
+        if 'error' in entry:
+            print(f"{i}. Error: {entry['error']}")
+        else:
+            action = entry.get('action', 'No action')
+            card = entry.get('card', 'No card')
+            print(f"{i}. {action.capitalize()} - {card}")
+
+# ------- main_cli.py -------
+
+from game_module import Game
+from command_line_interface_module import (
+    get_player_action_cli,
+    display_tavern_info,
+    display_player_hand,
+    display_player_board,
+    display_player_stats,
+    display_turn_log
+)
+
+def main():
+    game = Game()
+    player_names = ['Player1', 'Player2']  # You can customize player names here.
+    game.create_players_taverns(player_names)
+
+    while len(game.players_taverns) > 1:
+        # Each player takes a turn
+        for tavern in game.players_taverns:
+            # Handle start-of-turn logic (reroll, set gold, etc.)
+            tavern.start_of_turn()
+
+            # Display the state after start_of_turn()
+            print(f"------------------------- {tavern.player_name}'s turn -------------------------")
+            display_tavern_info(tavern)
+            display_player_hand(tavern)
+            display_player_board(tavern)
+            display_player_stats(tavern)
+
+            # Collect actions from the player until they choose to end the turn
+            action_list = []
+            while True:
+                action = get_player_action_cli()
+                action_type = action['action_type']
+
+                if action_type == 6:
+                    # End turn
+                    break
+                elif action_type == 5:
+                    # Show stats again (no change to state, just re-display)
+                    display_tavern_info(tavern)
+                    display_player_hand(tavern)
+                    display_player_board(tavern)
+                    display_player_stats(tavern)
+                else:
+                    # These actions modify the state and should be recorded
+                    action_list.append(action)
+
+            # Execute all actions chosen by the player
+            turn_log = tavern.player_turn(action_list)
+            
+            # Print detailed results of each action
+            for entry in turn_log:
+                if 'error' in entry:
+                    print(f"Error: {entry['error']}")
+                else:
+                    if entry.get('action') == 'buy':
+                        print(f"You bought a minion: {entry['card']}")
+                    elif entry.get('action') == 'play_card':
+                        print(f"You played a card: {entry['card']}")
+                    elif entry.get('action') == 'sell':
+                        print(f"You sold a minion: {entry['card']}")
+                    elif entry.get('action') == 'reroll':
+                        print("You rerolled the tavern board!")
+                        print("New Tavern Board:")
+                        for minion_info in entry.get('tavern_board', []):
+                            print(minion_info)
+
+            # Display a summary of all actions taken this turn
+            print("Actions taken this turn:")
+            display_turn_log(turn_log)
+
+        # After all players have completed their turns, simulate the fight phase
+        round_log = game.play_round()
+        # Print results of the fights
+        for fight_result in round_log:
+            if 'tie' in fight_result:
+                print("It's a tie this round!")
+            else:
+                print(f"{fight_result['winner']} defeated {fight_result['loser']} dealing {fight_result['damage']} damage!")
+
+    # When only one player remains, declare the winner
+    winner = game.declare_winner()
+    print(f"The winner is {winner}")
+
+if __name__ == "__main__":
+    main()
+
+# ------- main.py -------
+
+# В этом файле я запускаю игру
+import random
+import copy
+from cards_pool_module import CardsPool
+from game_module import Game
+from tavern_module import Tavern
+from fight_module import Fight
+from card_module import Card
+
+#Things to add: second player tavern check - done, fights - done, fights results, turns, players hp, pygame visualization
+# , triplets, drawing cards from the pool the same level or lower than your tavern, buffs
+
+#Trying all game at once
+game = Game()
+game.play_game()
 # ------- cards_pool_module.py -------
 
 import random
 from card_module import *
 
 class CardsPool:
-    """Описание
-    Что сейчас класс собой представляет
-        Класс, который отвечает за создание пула карт для конкретной игры.
-        Сейчас шафлит все карты. А что делать, если у юзера первая таверна, а в пуле есть карты второй таверны?
-    Что хочу от класса
-        --
-    Мысли по улучшению
-        Сейчас шафлит все карты. А что делать, если у юзера первая таверна, а в пуле есть карты второй таверны?
-    Вопрос для МВП
-        Что делать с доставанием карт из своей таверны? Это к классу Tavern?
-    """
     def __init__(self):
         self.cards_pool = []
         for card_name in MinionCard.minions_list:
@@ -671,14 +777,12 @@ class CardsPool:
 
     def card_draw(self) -> MinionCard:
         if self.cards_pool:
-            index = random.randrange(len(self.cards_pool))  # <-- Modified
-            return self.cards_pool.pop(index)               # <-- Modified
+            index = random.randrange(len(self.cards_pool))
+            return self.cards_pool.pop(index)
         else:
             raise Exception("No cards left in the pool")
 
     def card_return_to_pool(self, card: MinionCard):
         if card.card_name in MinionCard.minions_list:
-            original_card = MinionCard(card.card_name)  # Create a new card instance with original stats
-            self.cards_pool.append(original_card)        
-# a = CardsPool()
-# print([card.card_name for card in a.cards_pool])
+            original_card = MinionCard(card.card_name)
+            self.cards_pool.append(original_card)

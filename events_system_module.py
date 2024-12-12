@@ -19,7 +19,6 @@ class EventManager:
         self.subscribers[event_type].append(callback)
 
     def unsubscribe(self, event_type, callback):
-        """Unsubscribe a specific callback from an event."""
         if event_type in self.subscribers and callback in self.subscribers[event_type]:
             self.subscribers[event_type].remove(callback)
 
@@ -27,5 +26,6 @@ class EventManager:
         if event.event_type in self.subscribers:
             for callback in self.subscribers[event.event_type]:
                 callback(event)
+
 
 

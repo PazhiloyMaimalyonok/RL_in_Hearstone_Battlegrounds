@@ -33,16 +33,14 @@
 - [x] Добавить механику ивентов
 - [x] Протестировать механику ивентов
 
-- [ ] Сделать интеграцию с OpenAI Gym
-    - [ ] Переработать input() и print(), как посоветовал чатГПТ
 
-MVP to-do list:
-- [ ] Интеграция с OpenAI Gym
-    - [ ] State representation
-    - [ ] Action space
-    - [ ] Reward function
-    - [ ] Episode structure
-    - [ ] Observability
+
+- [ ] Сделать интеграцию с PettingZoo
+    - [ ] Use PettingZoo to model your multi-agent game environment.
+    - [ ] Implement the AEC API methods (reset, step, observe) to handle turn-based logic.
+    - [ ] Map each PettingZoo agent to a player in your game.
+    - [ ] Integrate with multi-agent RL training frameworks (e.g., RLlib) for actual training.
+
 
 To-Do after MVP:
 - [ ] Добавить автотесты

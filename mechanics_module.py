@@ -1,31 +1,21 @@
-
-# Видимо нужны:
-#     update_board() для таверны
-#     Card().call_mechanics() -- во время апдейта таверны прохожиться по всем картам и "звать механику"
-#     Добавить кэш разыгранной карты в play_card, чтобы при update_board() и/или call_mechanics() было понятно, от какой карты првоерять эффект
-#     У каждой карты есть список механик: врожденных и приобритенных. По каждому их них проходимся и они возвращают либо изменение, либо ничего
 import random
 from events_system_module import EventType, GameEvent, EventManager
 
 class Mechanic:
-    """Base class for all mechanics."""
     def __init__(self, card):
         self.card = card
 
     def subscribe(self, event_manager):
-        """Subscribe to events. Override in subclasses if needed."""
         pass
 
     def unsubscribe_all(self):
-        """Unsubscribe from all events. Override in subclasses if needed."""
         pass
 
 class PlayedCardBuffMechanic(Mechanic):
-    """This class calculates buffs for a card depending on a played card."""
     def __init__(self, card):
-        self.card = card
+        super().__init__(card)
         self.event_subscribed = []
-        self.event_manager = None  # Will be set when subscribing
+        self.event_manager = None
 
     def get_event_types(self):
         return [EventType.CARD_PLAYED]
@@ -36,14 +26,12 @@ class PlayedCardBuffMechanic(Mechanic):
         if event_type not in self.event_subscribed:
             event_manager.subscribe(event_type, self.trigger)
             self.event_subscribed.append(event_type)
-            print(f"{self.card.card_name}'s mechanic subscribed to {event_type}")
 
     def unsubscribe_all(self):
         if self.event_manager:
             for event_type in self.event_subscribed[:]:
                 self.event_manager.unsubscribe(event_type, self.trigger)
                 self.event_subscribed.remove(event_type)
-                print(f"{self.card.card_name}'s mechanic unsubscribed from {event_type}")
             if not self.event_subscribed:
                 self.event_manager = None
 
@@ -65,8 +53,9 @@ class PlayedCardBuffMechanic(Mechanic):
         if self.should_trigger(played_card):
             self.calculate_buffs()
             for minion_to_buff in self.choose_buff_targets():
-                minion_to_buff.buff_card(self.hp_buff, 'hp')
-                minion_to_buff.buff_card(self.attack_buff, 'attack')
+                buff_info_hp = minion_to_buff.buff_card(self.hp_buff, 'hp')
+                buff_info_attack = minion_to_buff.buff_card(self.attack_buff, 'attack')
+                # You can collect buff_info_hp and buff_info_attack if needed
 
     def calculate_buffs(self):
         self.attack_buff = 0
@@ -94,7 +83,7 @@ class PlayedCardBuffMechanic(Mechanic):
             pass
 
     def choose_buff_targets(self) -> list:
-        tavern = self.card.tavern  # Reference to the tavern
+        tavern = self.card.tavern
         buff_targets_list = [self.card]
         if self.card.card_name in ['Party_Elemental']:
             buff_candidates = [minion for minion in tavern.player_board if minion.klass == 'Elemental' and minion != self.card]
@@ -107,18 +96,16 @@ class PlayedCardBuffMechanic(Mechanic):
         return buff_targets_list
 
 class BattlecryMechanic(Mechanic):
-    """This class implements battlecry mechanics."""
     def __init__(self, card):
-        self.card = card
-        self.event_subscribed = []  # Add this line
+        super().__init__(card)
+        self.event_subscribed = []
 
-    # Removed get_event_types, subscribe, and unsubscribe methods  # <-- Edited
-
-    def trigger(self):  # <-- Edited (Removed event parameter)
+    def trigger(self):
         self.calculate_buffs()
         for minion_to_buff in self.choose_buff_targets():
-            minion_to_buff.buff_card(self.hp_buff, 'hp')
-            minion_to_buff.buff_card(self.attack_buff, 'attack')
+            buff_info_hp = minion_to_buff.buff_card(self.hp_buff, 'hp')
+            buff_info_attack = minion_to_buff.buff_card(self.attack_buff, 'attack')
+            # Collect buff_info_hp and buff_info_attack if needed
         self.trigger_change_tavern()
 
     def calculate_buffs(self):
@@ -152,24 +139,8 @@ class BattlecryMechanic(Mechanic):
         elif self.card.card_name == 'Picky_Eater':
             buff_targets_list = [self.card]
         elif self.card.card_name == 'Mind_Muck':
-            possible_target_list = [minion for minion in tavern.player_board if minion.klass == 'Demon' and minion != self.card]
-            if possible_target_list:
-                print('Possible targets:')
-                for idx, minion in enumerate(possible_target_list):
-                    print(f'{idx}: {minion.card_info()}')
-                while True:
-                    try:
-                        choice = int(input('Choose minion position (starting from 0): '))
-                        if 0 <= choice < len(possible_target_list):
-                            buff_targets_list = [possible_target_list[choice]]
-                            break
-                        else:
-                            print('Invalid choice. Try again.')
-                    except ValueError:
-                        print('Please enter a valid integer.')
-            else:
-                print('No valid targets to buff.')
-                buff_targets_list = []
+            buff_targets_list = [minion for minion in tavern.player_board if minion.klass == 'Demon' and minion != self.card]
+            # Selection logic can be implemented in the interface
         return buff_targets_list
 
     def trigger_change_tavern(self):
